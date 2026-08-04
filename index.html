@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halawa | Members Gathering</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+
+    <meta name="description" content="Halawa - A gathering of faith, brotherhood, and reflection. August 22, 2026 at Al Hikma Centre, Nandi.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        emeraldDeep: '#0F6B4F',
+                        emeraldDark: '#0A4A37',
+                        goldAccent: '#D4AF37',
+                        goldLight: '#F3E5AB',
+                        beigeSoft: '#F8F5EF',
+                        creamBg: '#FCFBF8',
+                        darkText: '#1B1B1B',
+                        subText: '#666666'
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        arabic: ['"Amiri"', 'serif'],
+                        serif: ['"Cinzel"', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Custom CSS Styles & Glassmorphism -->
+    <style>
+        body {
+            background-color: #FCFBF8;
+            color: #1B1B1B;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism Styles */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            box-shadow: 0 20px 40px -15px rgba(15, 107, 79, 0.05);
+        }
+
+        .glass-card-dark {
+            background: rgba(15, 107, 79, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Floating Animation */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(1deg); }
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float-reverse {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(12px) rotate(-1deg); }
+        }
+        .animate-float-reverse {
+            animation: float-reverse 7s ease-in-out infinite;
+        }
+
+        /* Shimmer Background Grid */
+        .bg-pattern {
+            background-image: radial-gradient(rgba(212, 175, 55, 0.12) 1px, transparent 1px);
+            background-size: 28px 28px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #FCFBF8;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #0F6B4F;
+            border-radius: 4px;
+        }
+
+        /* Button Ripple Effect */
+        .btn-ripple {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-ripple::after {
+            content: "";
+            display: block;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
+            background-repeat: no-repeat;
+            background-position: 50%;
+            transform: scale(10, 10);
+            opacity: 0;
+            transition: transform .5s, opacity 1s;
+        }
+
+        .btn-ripple:active::after {
+            transform: scale(0, 0);
+            opacity: .3;
+            transition: 0s;
+        }
+
+        /* Reveal on Scroll */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="font-sans antialiased text-darkText bg-creamBg bg-pattern">
+
+    <!-- ==================== NAVIGATION BAR ==================== -->
+    <header id="navbar" class="fixed top-0 left-0 w-full z-50 transition-all duration-300 py-5">
+        <div class="max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between">
+            
+            <!-- Brand Logo -->
+            <a href="#hero" class="flex items-center gap-3 group focus:outline-none">
+                <img src="7000.png" alt="Halawa Logo" class="h-10 w-auto transition-transform duration-300 group-hover:scale-105">
+                <span class="font-serif font-bold text-xl tracking-wider text-emeraldDeep hidden sm:inline-block"></span>
+            </a>
+
+            <!-- Desktop Nav Links -->
+            <nav class="hidden md:flex items-center gap-8 font-medium text-sm text-darkText/80">
+                <a href="#hero" class="hover:text-emeraldDeep transition-colors">Home</a>
+                <a href="#about" class="hover:text-emeraldDeep transition-colors">About</a>
+                <a href="#countdown-section" class="hover:text-emeraldDeep transition-colors">Countdown</a>
+                <a href="#venue" class="hover:text-emeraldDeep transition-colors">Venue</a>
+            </nav>
+
+            <!-- Register Button & Mobile Toggle -->
+            <div class="flex items-center gap-4">
+                <a href="#register" class="btn-ripple hidden sm:inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-emeraldDeep text-white text-sm font-semibold shadow-lg shadow-emeraldDeep/20 hover:bg-emeraldDark hover:shadow-emeraldDeep/30 hover:-translate-y-0.5 border border-goldAccent/30">
+                    Register Now
+                </a>
+                <button id="mobile-menu-btn" class="md:hidden p-2 text-darkText focus:outline-none" aria-label="Toggle menu">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Dropdown -->
+        <div id="mobile-menu" class="hidden md:hidden glass-card mt-3 mx-6 p-6 rounded-2xl flex-col gap-4 text-center border border-goldAccent/30 shadow-2xl">
+            <a href="#hero" class="mobile-link text-lg font-medium hover:text-emeraldDeep py-1">Home</a>
+            <a href="#about" class="mobile-link text-lg font-medium hover:text-emeraldDeep py-1">About</a>
+            <a href="#countdown-section" class="mobile-link text-lg font-medium hover:text-emeraldDeep py-1">Countdown</a>
+            <a href="#venue" class="mobile-link text-lg font-medium hover:text-emeraldDeep py-1">Venue</a>
+            <a href="#register" class="mobile-link btn-ripple w-full py-3 rounded-xl bg-emeraldDeep text-white font-semibold shadow-md block">Register Now</a>
+        </div>
+    </header>
+
+    <!-- ==================== HERO SECTION ==================== -->
+    <section id="hero" class="relative min-h-screen pt-32 pb-20 flex flex-col justify-center items-center overflow-hidden">
+        
+        <!-- Ambient Glowing Background Elements -->
+        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-goldAccent/10 rounded-full blur-[120px] pointer-events-none"></div>
+        <div class="absolute top-1/3 left-1/4 w-[350px] h-[350px] bg-emeraldDeep/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div class="max-w-5xl mx-auto px-6 text-center relative z-10 flex flex-col items-center">
+            
+            <!-- Main Event Logo (7000.png) -->
+            <div class="mb-6 relative group">
+                <div class="absolute inset-0 bg-goldAccent/20 rounded-full blur-2xl group-hover:bg-goldAccent/30 transition-all duration-500"></div>
+                <img src="7000.png" alt="Halawa Main Logo" class="relative z-10 h-28 sm:h-36 md:h-44 w-auto object-contain mx-auto drop-shadow-xl animate-float">
+            </div>
+
+            <!-- Event Name Header -->
+            <span class="inline-block px-4 py-1.5 rounded-full bg-goldAccent/15 border border-goldAccent/40 text-emeraldDeep text-xs sm:text-sm font-semibold tracking-widest uppercase mb-4">
+                 Members Gathering 
+            </span>
+
+            <!-- Arabic Slogan Card -->
+            <div class="glass-card max-w-2xl w-full my-6 p-6 sm:p-8 rounded-3xl border border-goldAccent/40 shadow-xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-goldAccent/10 rounded-bl-full pointer-events-none"></div>
+                <p class="font-arabic text-2xl sm:text-3xl md:text-4xl text-emeraldDeep leading-relaxed text-center font-bold tracking-wide" dir="rtl">
+                    قال معاذُ بنُ جبلٍ: اجلِسْ بنا نؤمِنْ ساعةً
+                </p>
+            </div>
+
+            <!-- English Tagline -->
+            <p class="text-lg sm:text-xl md:text-2xl text-subText font-light max-w-2xl mx-auto mt-2 mb-8 leading-relaxed">
+             "Come, let us sit together and strengthen our faith for a while."
+            </p>
+
+            <!-- Location & Date Pill -->
+            <div class="flex flex-wrap items-center justify-center gap-4 text-sm sm:text-base font-medium text-darkText/90 mb-10">
+                <div class="flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 border border-goldAccent/20 shadow-sm">
+                    <i data-lucide="map-pin" class="w-4 h-4 text-goldAccent"></i>
+                    <span>Al Hikma Centre, Nandi</span>
+                </div>
+                <div class="flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 border border-goldAccent/20 shadow-sm">
+                    <i data-lucide="calendar" class="w-4 h-4 text-emeraldDeep"></i>
+                    <span>22 August 2026</span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                <a href="#register" class="btn-ripple px-8 py-4 rounded-full bg-gradient-to-r from-emeraldDeep to-emeraldDark text-white font-semibold text-base shadow-xl shadow-emeraldDeep/25 hover:shadow-2xl hover:shadow-emeraldDeep/40 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 border border-goldAccent/40">
+                    <span>Register Now</span>
+                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                </a>
+                <a href="#about" class="px-8 py-4 rounded-full glass-card text-emeraldDeep font-semibold text-base hover:bg-white/80 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 border border-goldAccent/30">
+                    Learn More
+                </a>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ==================== COUNTDOWN SECTION ==================== -->
+    <section id="countdown-section" class="py-16 relative">
+        <div class="max-w-5xl mx-auto px-6 reveal">
+            <div class="glass-card-dark p-8 sm:p-12 rounded-3xl text-center relative overflow-hidden border border-goldAccent/40">
+                
+                <!-- Background Glow -->
+                <div class="absolute -bottom-20 -right-20 w-80 h-80 bg-goldAccent/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <h2 class="text-xs sm:text-sm font-semibold tracking-widest text-goldAccent uppercase mb-2">The Moment Approaches</h2>
+                <h3 class="text-2xl sm:text-3xl font-serif text-white font-bold mb-8">Event Live Countdown</h3>
+
+                <!-- Live Countdown Grid -->
+                <div id="countdown" class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 max-w-3xl mx-auto">
+                    
+                    <div class="p-4 sm:p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 flex flex-col items-center justify-center">
+                        <span id="days" class="text-3xl sm:text-5xl font-bold font-serif text-goldLight tracking-tight">00</span>
+                        <span class="text-xs sm:text-sm uppercase tracking-wider text-white/80 mt-2 font-medium">Days</span>
+                    </div>
+
+                    <div class="p-4 sm:p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 flex flex-col items-center justify-center">
+                        <span id="hours" class="text-3xl sm:text-5xl font-bold font-serif text-goldLight tracking-tight">00</span>
+                        <span class="text-xs sm:text-sm uppercase tracking-wider text-white/80 mt-2 font-medium">Hours</span>
+                    </div>
+
+                    <div class="p-4 sm:p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 flex flex-col items-center justify-center">
+                        <span id="minutes" class="text-3xl sm:text-5xl font-bold font-serif text-goldLight tracking-tight">00</span>
+                        <span class="text-xs sm:text-sm uppercase tracking-wider text-white/80 mt-2 font-medium">Minutes</span>
+                    </div>
+
+                    <div class="p-4 sm:p-6 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 flex flex-col items-center justify-center">
+                        <span id="seconds" class="text-3xl sm:text-5xl font-bold font-serif text-goldLight tracking-tight">00</span>
+                        <span class="text-xs sm:text-sm uppercase tracking-wider text-white/80 mt-2 font-medium">Seconds</span>
+                    </div>
+
+                </div>
+
+                <div id="countdown-expired" class="hidden text-2xl sm:text-3xl font-serif text-goldLight font-bold py-6">
+                    ✨ The Event Has Started ✨
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== ABOUT EVENT SECTION ==================== -->
+    <section id="about" class="py-24 relative">
+        <div class="max-w-7xl mx-auto px-6 lg:px-12">
+            
+            <div class="text-center max-w-3xl mx-auto mb-16 reveal">
+                <span class="text-xs sm:text-sm font-semibold tracking-widest text-goldAccent uppercase">Purpose & Vision</span>
+                <h2 class="text-3xl sm:text-4xl font-serif font-bold text-emeraldDeep mt-2 mb-4">About Halawa</h2>
+                <div class="w-16 h-1 bg-goldAccent mx-auto rounded-full mb-6"></div>
+                <p class="text-subText text-base sm:text-lg leading-relaxed">
+                    Halawa is an extraordinary members' gathering convention organized by Wisdom Students, crafted to rejuvenate faith, cultivate genuine brotherhood, and nurture intellectual and spiritual enlightenment in an atmosphere of warmth and unity.
+                </p>
+            </div>
+
+            <!-- Pillars Cards Grid -->
+            <div class="grid md:grid-cols-3 gap-8">
+                
+                <!-- Pillar 1 -->
+                <div class="glass-card p-8 rounded-3xl hover:-translate-y-2 transition-all duration-300 border border-goldAccent/20 reveal">
+                    <div class="w-14 h-14 rounded-2xl bg-emeraldDeep/10 flex items-center justify-center text-emeraldDeep mb-6">
+                        <i data-lucide="heart-handshake" class="w-7 h-7"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-emeraldDeep mb-3">Genuine Brotherhood</h3>
+                    <p class="text-subText leading-relaxed text-sm">
+                        Connect with like-minded youth, forming meaningful bonds built on mutual respect, shared purpose, and faith-driven ideals.
+                    </p>
+                </div>
+
+                <!-- Pillar 2 -->
+                <div class="glass-card p-8 rounded-3xl hover:-translate-y-2 transition-all duration-300 border border-goldAccent/20 reveal">
+                    <div class="w-14 h-14 rounded-2xl bg-goldAccent/10 flex items-center justify-center text-goldAccent mb-6">
+                        <i data-lucide="book-open" class="w-7 h-7"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-emeraldDeep mb-3">Spiritual Reflection</h3>
+                    <p class="text-subText leading-relaxed text-sm">
+                        Engage in uplifting discourses and reflections designed to awaken purpose, inner peace, and intellectual clarity.
+                    </p>
+                </div>
+
+                <!-- Pillar 3 -->
+                <div class="glass-card p-8 rounded-3xl hover:-translate-y-2 transition-all duration-300 border border-goldAccent/20 reveal">
+                    <div class="w-14 h-14 rounded-2xl bg-emeraldDeep/10 flex items-center justify-center text-emeraldDeep mb-6">
+                        <i data-lucide="sparkles" class="w-7 h-7"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-emeraldDeep mb-3">Empowering Youth</h3>
+                    <p class="text-subText leading-relaxed text-sm">
+                        Equipping the upcoming generation with timeless wisdom and leadership skills to serve as positive beacons in society.
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ==================== VENUE / LOCATION SECTION ==================== -->
+    <section id="venue" class="py-20 relative bg-beigeSoft/60">
+        <div class="max-w-7xl mx-auto px-6 lg:px-12">
+            
+            <div class="grid lg:grid-cols-12 gap-12 items-center">
+                
+                <!-- Venue Details -->
+                <div class="lg:col-span-5 reveal">
+                    <span class="text-xs sm:text-sm font-semibold tracking-widest text-goldAccent uppercase">Event Location</span>
+                    <h2 class="text-3xl sm:text-4xl font-serif font-bold text-emeraldDeep mt-2 mb-6">Al Hikma Centre, Nandi</h2>
+                    
+                    <p class="text-subText mb-8 leading-relaxed">
+                        A calm and modern venue with all necessary facilities, convenient for everyone to reach and attend.
+                    </p>
+
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-4 p-4 rounded-2xl glass-card border border-goldAccent/20">
+                            <div class="p-3 bg-emeraldDeep text-white rounded-xl">
+                                <i data-lucide="map-pin" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-emeraldDeep">Address</h4>
+                                <p class="text-sm text-subText">Al Hikma Centre, Nandi, Kerala, India</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-4 p-4 rounded-2xl glass-card border border-goldAccent/20">
+                            <div class="p-3 bg-goldAccent text-white rounded-xl">
+                                <i data-lucide="clock" class="w-6 h-6"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-emeraldDeep">Date & Time</h4>
+                                <p class="text-sm text-subText">Saturday, 22 August 2026<br>@ 6:00 PM</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Google Map Frame -->
+                <div class="lg:col-span-7 reveal">
+                    <div class="glass-card p-3 rounded-3xl shadow-xl border border-goldAccent/30 overflow-hidden h-[380px] sm:h-[420px] relative">
+                        <iframe 
+                            title="Venue Map Location"
+                            class="w-full h-full rounded-2xl border-0 filter grayscale contrast-125 opacity-90 hover:grayscale-0 transition-all duration-500"
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3909.8329241908237!2d75.6322!3d11.4925!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMTHCsDI5JzMzLjAiTiA3NcKwMzcnNTUuOSJF!5e0!3m2!1sen!2sin!4v1650000000000!5m2!1sen!2sin" 
+                            allowfullscreen="" 
+                            loading="lazy" 
+                            referrerpolicy="no-referrer-when-downgrade">
+                        </iframe>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ==================== REGISTRATION CTA SECTION ==================== -->
+    <section class="py-24 relative overflow-hidden" id="register">
+        <div class="max-w-4xl mx-auto px-6 reveal">
+            <div class="glass-card-dark p-10 sm:p-16 rounded-3xl text-center relative border border-goldAccent/40 shadow-2xl">
+                
+                <div class="absolute -top-10 left-1/2 -translate-x-1/2 w-48 h-48 bg-goldAccent/20 rounded-full blur-3xl pointer-events-none"></div>
+
+                <img src="70000.png" alt="Halawa Icon" class="h-16 w-auto mx-auto mb-6 drop-shadow-md">
+
+                <h2 class="text-3xl sm:text-5xl font-serif text-white font-bold mb-4">Reserve Now</h2>
+                <p class="text-white/80 max-w-lg mx-auto mb-8 text-base sm:text-lg">
+                    Join us on August 22, 2026 <br>@ Al Hikma Centre, Nandi.  
+                </p>
+
+                <a href="register.html" class="btn-ripple inline-flex items-center gap-3 px-10 py-5 rounded-full bg-goldAccent hover:bg-yellow-500 text-emeraldDark font-bold text-lg shadow-2xl shadow-goldAccent/30 hover:-translate-y-1 transition-all">
+                    <span>Register Now</span>
+                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="py-12 border-t border-goldAccent/20 bg-creamBg">
+        <div class="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
+            
+            <div class="flex items-center gap-3">
+                <img src="7001.png" alt="Halawa Logo" class="h-8 w-auto">
+                <span class="font-serif font-bold text-lg text-emeraldDeep tracking-wider"></span>
+            </div>
+
+            <div class="text-xs text-subText/70">
+                &copy; 2026 Halawa. All Rights Reserved.
+            </div>
+
+        </div>
+    </footer>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+        // 1. Initialize Lucide Icons
+        lucide.createIcons();
+
+        // 2. Sticky Navbar Blur Effect on Scroll
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 40) {
+                navbar.classList.add('glass-card', 'shadow-md', 'py-3');
+                navbar.classList.remove('py-5');
+            } else {
+                navbar.classList.remove('glass-card', 'shadow-md', 'py-3');
+                navbar.classList.add('py-5');
+            }
+        });
+
+        // 3. Mobile Navigation Toggle & Outside Click Listener
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileLinks = document.querySelectorAll('.mobile-link');
+
+        // Toggle mobile menu on button click
+        mobileMenuBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevents immediate close event on document
+            mobileMenu.classList.toggle('hidden');
+            mobileMenu.classList.toggle('flex');
+        });
+
+        // Close menu when clicking on any menu link
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('flex');
+            });
+        });
+
+        // Close menu when tapping anywhere outside the mobile menu and menu button
+        document.addEventListener('click', (e) => {
+            if (!mobileMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+                mobileMenu.classList.add('hidden');
+                mobileMenu.classList.remove('flex');
+            }
+        });
+
+        // 4. Countdown Timer Logic (Target Date: 22 August 2026 09:00:00)
+        const targetDate = new Date("August 22, 2026 09:00:00").getTime();
+
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const difference = targetDate - now;
+
+            if (difference <= 0) {
+                document.getElementById('countdown').classList.add('hidden');
+                document.getElementById('countdown-expired').classList.remove('hidden');
+                return;
+            }
+
+            const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+
+            document.getElementById('days').innerText = String(days).padStart(2, '0');
+            document.getElementById('hours').innerText = String(hours).padStart(2, '0');
+            document.getElementById('minutes').innerText = String(minutes).padStart(2, '0');
+            document.getElementById('seconds').innerText = String(seconds).padStart(2, '0');
+        }
+
+        setInterval(updateCountdown, 1000);
+        updateCountdown();
+
+        // 5. Scroll Reveal Animation (IntersectionObserver)
+        const observerOptions = {
+            threshold: 0.15
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal').forEach(element => {
+            observer.observe(element);
+        });
+    </script>
+</body>
+</html>
+

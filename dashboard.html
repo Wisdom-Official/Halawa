@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Halawa | Admin Dashboard</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        emeraldDeep: '#0F6B4F',
+                        emeraldDark: '#0A4A37',
+                        goldAccent: '#D4AF37',
+                        goldLight: '#F3E5AB',
+                        creamBg: '#FCFBF8',
+                        darkText: '#1B1B1B',
+                        subText: '#666666'
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        serif: ['"Cinzel"', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body {
+            background-color: #FCFBF8;
+            color: #1B1B1B;
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(212, 175, 55, 0.25);
+        }
+
+        .glass-card-dark {
+            background: rgba(15, 107, 79, 0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(212, 175, 55, 0.35);
+        }
+
+        .bg-pattern {
+            background-image: radial-gradient(rgba(212, 175, 55, 0.15) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        input {
+            font-size: 16px !important;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased text-darkText bg-creamBg bg-pattern min-h-screen flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="w-full py-3.5 px-4 sm:px-8 border-b border-goldAccent/20 glass-card sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <a href="index.html" class="flex items-center gap-2 sm:gap-3">
+                <img src="7000.png" alt="Halawa Logo" class="h-8 sm:h-10 w-auto">
+                <span class="font-serif font-bold text-base sm:text-xl tracking-wider text-emeraldDeep truncate"></span>
+            </a>
+
+            <button id="logoutBtn" class="hidden inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border border-red-500/30 text-red-600 hover:bg-red-600 hover:text-white transition-all text-xs sm:text-sm font-semibold">
+                <i data-lucide="log-out" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+                <span>Logout</span>
+            </button>
+            
+            <a href="index.html" class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border border-emeraldDeep/30 text-emeraldDeep text-xs sm:text-sm font-semibold hover:bg-emeraldDeep hover:text-white transition-all">
+                <i data-lucide="arrow-left" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+                <span>Home</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Section -->
+    <main class="flex-grow py-6 sm:py-10 px-3 sm:px-6 lg:px-12 max-w-7xl mx-auto w-full">
+
+        <!-- LOGIN SECTION -->
+        <div id="loginSection" class="max-w-md mx-auto my-8 sm:my-16">
+            <div class="glass-card-dark p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-goldAccent/40 shadow-xl text-center">
+                <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-goldAccent/20 flex items-center justify-center text-goldAccent mx-auto mb-4 sm:mb-6 border border-goldAccent/30">
+                    <i data-lucide="lock" class="w-7 h-7 sm:w-8 sm:h-8"></i>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-serif font-bold text-white mb-1.5">Admin Portal</h2>
+                <p class="text-goldLight/80 text-xs sm:text-sm mb-6">Enter password to view registered members</p>
+
+                <form id="loginForm" class="space-y-4">
+                    <div>
+                        <input type="password" id="passwordInput" required placeholder="Enter Admin Password"
+                               class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-goldAccent focus:ring-2 focus:ring-goldAccent/50 transition text-center text-base sm:text-lg">
+                    </div>
+                    <button type="submit" id="loginBtn" class="w-full py-3.5 rounded-xl bg-goldAccent active:bg-yellow-500 hover:bg-yellow-500 text-emeraldDark font-bold text-sm sm:text-base shadow-lg transition-all flex items-center justify-center gap-2">
+                        <span>Access Dashboard</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                    </button>
+                </form>
+
+                <div id="loginError" class="hidden mt-4 text-xs font-semibold text-red-300 bg-red-500/20 py-2.5 px-3.5 rounded-lg border border-red-500/30"></div>
+            </div>
+        </div>
+
+        <!-- DASHBOARD CONTENT -->
+        <div id="dashboardSection" class="hidden space-y-5 sm:space-y-8">
+            
+            <!-- Metrics Grid -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+                <div class="glass-card p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-goldAccent/30 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] sm:text-xs font-semibold text-subText uppercase tracking-wider">Total</p>
+                        <h3 id="statTotal" class="text-2xl sm:text-3xl font-serif font-bold text-emeraldDeep mt-0.5 sm:mt-1">0</h3>
+                    </div>
+                    <div class="p-2 sm:p-3 bg-emeraldDeep/10 text-emeraldDeep rounded-lg sm:rounded-xl">
+                        <i data-lucide="users" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                    </div>
+                </div>
+
+                <div class="glass-card p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-goldAccent/30 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] sm:text-xs font-semibold text-subText uppercase tracking-wider">Payyoli</p>
+                        <h3 id="statPayyoli" class="text-2xl sm:text-3xl font-serif font-bold text-emeraldDeep mt-0.5 sm:mt-1">0</h3>
+                    </div>
+                    <div class="p-2 sm:p-3 bg-goldAccent/20 text-emeraldDark rounded-lg sm:rounded-xl">
+                        <i data-lucide="map-pin" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                    </div>
+                </div>
+
+                <div class="glass-card p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-goldAccent/30 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] sm:text-xs font-semibold text-subText uppercase tracking-wider">Nandi</p>
+                        <h3 id="statNandi" class="text-2xl sm:text-3xl font-serif font-bold text-emeraldDeep mt-0.5 sm:mt-1">0</h3>
+                    </div>
+                    <div class="p-2 sm:p-3 bg-goldAccent/20 text-emeraldDark rounded-lg sm:rounded-xl">
+                        <i data-lucide="map-pin" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                    </div>
+                </div>
+
+                <div class="glass-card p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-goldAccent/30 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] sm:text-xs font-semibold text-subText uppercase tracking-wider">Thurayur</p>
+                        <h3 id="statThurayur" class="text-2xl sm:text-3xl font-serif font-bold text-emeraldDeep mt-0.5 sm:mt-1">0</h3>
+                    </div>
+                    <div class="p-2 sm:p-3 bg-goldAccent/20 text-emeraldDark rounded-lg sm:rounded-xl">
+                        <i data-lucide="map-pin" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Controls & Search -->
+            <div class="glass-card p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-goldAccent/30 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4">
+                
+                <!-- Unit Filters -->
+                <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+                    <span class="text-[11px] sm:text-xs font-bold text-emeraldDeep uppercase tracking-wider whitespace-nowrap mr-1">Unit:</span>
+                    <button class="unit-filter-btn px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-xs font-bold transition-all bg-emeraldDeep text-white whitespace-nowrap" data-unit="All">All Units</button>
+                    <button class="unit-filter-btn px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-xs font-bold transition-all bg-white border border-goldAccent/40 text-darkText whitespace-nowrap" data-unit="Payyoli">Payyoli</button>
+                    <button class="unit-filter-btn px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-xs font-bold transition-all bg-white border border-goldAccent/40 text-darkText whitespace-nowrap" data-unit="Nandi">Nandi</button>
+                    <button class="unit-filter-btn px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-xs font-bold transition-all bg-white border border-goldAccent/40 text-darkText whitespace-nowrap" data-unit="Thurayur">Thurayur</button>
+                </div>
+
+                <!-- Search Input & Refresh -->
+                <div class="flex items-center gap-2 w-full md:w-auto">
+                    <div class="relative flex-grow md:w-64">
+                        <input type="text" id="searchInput" placeholder="Search name or mobile..."
+                               class="w-full pl-9 pr-3 py-2 rounded-lg sm:rounded-xl bg-white border border-goldAccent/30 text-xs font-medium focus:outline-none focus:border-emeraldDeep">
+                        <i data-lucide="search" class="w-4 h-4 text-subText absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    </div>
+
+                    <button id="refreshBtn" title="Refresh Data" class="p-2 bg-emeraldDeep text-white rounded-lg sm:rounded-xl hover:bg-emeraldDark transition-all shrink-0">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- Members Data Table / Mobile Card View -->
+            <div class="glass-card rounded-xl sm:rounded-2xl border border-goldAccent/30 overflow-hidden shadow-md">
+                
+                <!-- Desktop Table View -->
+                <div class="hidden md:block overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-emeraldDeep text-white text-xs font-semibold uppercase tracking-wider border-b border-goldAccent/30">
+                                <th class="py-3.5 px-5">#</th>
+                                <th class="py-3.5 px-5">Name</th>
+                                <th class="py-3.5 px-5">Mobile Number</th>
+                                <th class="py-3.5 px-5">Unit</th>
+                                <th class="py-3.5 px-5">Registration Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBodyDesktop" class="divide-y divide-goldAccent/10 text-sm font-medium"></tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile Card List View -->
+                <div id="mobileCardList" class="block md:hidden divide-y divide-goldAccent/15 p-2"></div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="hidden p-8 sm:p-12 text-center">
+                    <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-emeraldDeep/10 text-emeraldDeep flex items-center justify-center mx-auto mb-2">
+                        <i data-lucide="inbox" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                    </div>
+                    <p class="text-emeraldDeep font-semibold text-sm sm:text-base">No registered members found</p>
+                    <p class="text-xs text-subText mt-1">Try changing unit filter or search query</p>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-12 border-t border-goldAccent/20 bg-creamBg">
+        <div class="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
+            <div class="flex items-center gap-3">
+                <img src="7001.png" alt="Halawa Logo" class="h-8 w-auto">
+                <span class="font-serif font-bold text-lg text-emeraldDeep tracking-wider"></span>
+            </div>
+            <div class="text-xs text-subText/70">
+                &copy; 2026 Halawa. All Rights Reserved.
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        lucide.createIcons();
+
+        // Web App Deployment URL
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbwji8eSDfoUWXbcLNSAHLjjyNeBM604wkpEqtiIPeHrgFCTNDEoMJSbggBru00-NR-j2Q/exec';
+
+        let globalData = [];
+        let currentAdminPassword = '';
+        let selectedUnitFilter = 'All';
+
+        const loginSection = document.getElementById('loginSection');
+        const dashboardSection = document.getElementById('dashboardSection');
+        const loginForm = document.getElementById('loginForm');
+        const passwordInput = document.getElementById('passwordInput');
+        const loginError = document.getElementById('loginError');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const tableBodyDesktop = document.getElementById('tableBodyDesktop');
+        const mobileCardList = document.getElementById('mobileCardList');
+        const emptyState = document.getElementById('emptyState');
+        const searchInput = document.getElementById('searchInput');
+        const refreshBtn = document.getElementById('refreshBtn');
+
+        // Check Session Persistence
+        const savedPass = sessionStorage.getItem('halawa_admin_pass');
+        if (savedPass) {
+            currentAdminPassword = savedPass;
+            fetchDashboardData();
+        }
+
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            currentAdminPassword = passwordInput.value.trim();
+            fetchDashboardData();
+        });
+
+        logoutBtn.addEventListener('click', function() {
+            sessionStorage.removeItem('halawa_admin_pass');
+            location.reload();
+        });
+
+        refreshBtn.addEventListener('click', function() {
+            refreshBtn.classList.add('animate-spin');
+            fetchDashboardData(() => {
+                refreshBtn.classList.remove('animate-spin');
+            });
+        });
+
+        function fetchDashboardData(callback) {
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span>Verifying...</span>';
+            loginError.classList.add('hidden');
+
+            const fetchUrl = `${scriptURL}?action=getData&password=${encodeURIComponent(currentAdminPassword)}`;
+
+            fetch(fetchUrl, {
+                method: 'GET',
+                redirect: 'follow'
+            })
+            .then(res => {
+                return res.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        throw new Error('Script returned non-JSON response. Please check Google Apps Script deployment (Who has access: Anyone).');
+                    }
+                });
+            })
+            .then(data => {
+                if (data.result === 'success') {
+                    sessionStorage.setItem('halawa_admin_pass', currentAdminPassword);
+                    loginSection.classList.add('hidden');
+                    dashboardSection.classList.remove('hidden');
+                    logoutBtn.classList.remove('hidden');
+
+                    globalData = data.data || [];
+                    updateMetrics();
+                    renderData();
+                } else if (data.result === 'unauthorized') {
+                    loginError.innerText = '❌ Incorrect Password!';
+                    loginError.classList.remove('hidden');
+                    sessionStorage.removeItem('halawa_admin_pass');
+                } else {
+                    loginError.innerText = `❌ Error: ${data.message || data.error || 'Failed to fetch data'}`;
+                    loginError.classList.remove('hidden');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                loginError.innerText = `❌ ${err.message || 'Connection Error. Please verify Web App URL.'}`;
+                loginError.classList.remove('hidden');
+            })
+            .finally(() => {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<span>Access Dashboard</span><i data-lucide="arrow-right" class="w-4 h-4 sm:w-5 sm:h-5"></i>';
+                lucide.createIcons();
+                if (callback) callback();
+            });
+        }
+
+        function updateMetrics() {
+            document.getElementById('statTotal').innerText = globalData.length;
+            document.getElementById('statPayyoli').innerText = globalData.filter(d => (d.unit || '').toString().trim().toLowerCase() === 'payyoli').length;
+            document.getElementById('statNandi').innerText = globalData.filter(d => (d.unit || '').toString().trim().toLowerCase() === 'nandi').length;
+            document.getElementById('statThurayur').innerText = globalData.filter(d => (d.unit || '').toString().trim().toLowerCase() === 'thurayur').length;
+        }
+
+        // Unit Filter Buttons
+        document.querySelectorAll('.unit-filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.unit-filter-btn').forEach(b => {
+                    b.classList.remove('bg-emeraldDeep', 'text-white');
+                    b.classList.add('bg-white', 'border', 'border-goldAccent/40', 'text-darkText');
+                });
+                this.classList.remove('bg-white', 'border', 'border-goldAccent/40', 'text-darkText');
+                this.classList.add('bg-emeraldDeep', 'text-white');
+
+                selectedUnitFilter = this.getAttribute('data-unit');
+                renderData();
+            });
+        });
+
+        searchInput.addEventListener('input', renderData);
+
+        function formatDate(rawDate) {
+            if (!rawDate) return 'N/A';
+            const parsed = new Date(rawDate);
+            return isNaN(parsed.getTime()) ? rawDate : parsed.toLocaleString();
+        }
+
+        function renderData() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+
+            const filtered = globalData.filter(item => {
+                const itemUnit = (item.unit || '').toString().trim().toLowerCase();
+                const matchesUnit = (selectedUnitFilter === 'All') || (itemUnit === selectedUnitFilter.toLowerCase());
+                
+                const matchesSearch = (item.name || '').toString().toLowerCase().includes(searchTerm) || 
+                                      (item.mobile || '').toString().includes(searchTerm);
+                                      
+                return matchesUnit && matchesSearch;
+            });
+
+            tableBodyDesktop.innerHTML = '';
+            mobileCardList.innerHTML = '';
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                
+                filtered.forEach((row, index) => {
+                    const formattedDate = formatDate(row.timestamp);
+                    const name = escapeHtml((row.name || '').toString());
+                    const rawMobile = (row.mobile || '').toString();
+                    const mobile = escapeHtml(rawMobile);
+                    const cleanPhone = rawMobile.replace(/[^\d+]/g, ''); // Extract clean phone digits for tel: link
+                    const unit = escapeHtml((row.unit || '').toString());
+                    
+                    // Desktop Table Row
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-goldAccent/5 transition-colors';
+                    tr.innerHTML = `
+                        <td class="py-3 px-5 font-bold text-emeraldDeep">${index + 1}</td>
+                        <td class="py-3 px-5 font-semibold text-darkText">${name}</td>
+                        <td class="py-3 px-5 font-mono text-xs">
+                            <a href="tel:${cleanPhone}" title="Click to call ${mobile}" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emeraldDeep/10 text-emeraldDeep hover:bg-emeraldDeep hover:text-white transition-all font-semibold active:scale-95">
+                                <i data-lucide="phone-call" class="w-3.5 h-3.5 text-goldAccent"></i>
+                                <span>${mobile}</span>
+                            </a>
+                        </td>
+                        <td class="py-3 px-5">
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-goldAccent/20 text-emeraldDark border border-goldAccent/30">
+                                ${unit}
+                            </span>
+                        </td>
+                        <td class="py-3 px-5 text-xs text-subText">${formattedDate}</td>
+                    `;
+                    tableBodyDesktop.appendChild(tr);
+
+                    // Mobile Card View
+                    const card = document.createElement('div');
+                    card.className = 'p-3.5 space-y-2.5';
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="w-5 h-5 rounded-full bg-emeraldDeep/10 text-emeraldDeep text-xs font-bold flex items-center justify-center">${index + 1}</span>
+                                <span class="font-bold text-sm text-darkText">${name}</span>
+                            </div>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-goldAccent/20 text-emeraldDark border border-goldAccent/30">
+                                ${unit}
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs text-subText pt-1 border-t border-goldAccent/10">
+                            <a href="tel:${cleanPhone}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emeraldDeep text-white font-mono text-xs font-bold shadow-sm active:scale-95 transition-all">
+                                <i data-lucide="phone-call" class="w-3.5 h-3.5 text-goldAccent"></i>
+                                <span>${mobile}</span>
+                            </a>
+                            <span class="text-[10px] text-subText">${formattedDate}</span>
+                        </div>
+                    `;
+                    mobileCardList.appendChild(card);
+                });
+                
+                lucide.createIcons();
+            }
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>

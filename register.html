@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Halawa | Member Registration</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+
+    <meta name="description" content="Halawa Members Gathering - Mobile Responsive Registration Form">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        emeraldDeep: '#0F6B4F',
+                        emeraldDark: '#0A4A37',
+                        goldAccent: '#D4AF37',
+                        goldLight: '#F3E5AB',
+                        creamBg: '#FCFBF8',
+                        darkText: '#1B1B1B',
+                        subText: '#666666'
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        serif: ['"Cinzel"', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body {
+            background-color: #FCFBF8;
+            color: #1B1B1B;
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .glass-card-dark {
+            background: rgba(15, 107, 79, 0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(212, 175, 55, 0.35);
+            box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.25);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .bg-pattern {
+            background-image: radial-gradient(rgba(212, 175, 55, 0.15) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        /* Prevent auto-zoom on mobile input focus */
+        input, select {
+            font-size: 16px !important;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased text-darkText bg-creamBg bg-pattern flex flex-col justify-between min-h-screen">
+
+    <!-- Header -->
+    <header class="w-full py-3.5 px-4 sm:px-8 border-b border-goldAccent/20 glass-card sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <a href="index.html" class="flex items-center gap-2.5">
+                <img src="7000.png" alt="Halawa Logo" class="h-8 sm:h-10 w-auto" onerror="this.onerror=null; this.src='https://via.placeholder.com/120x40?text=Halawa';">
+                <span class="font-serif font-bold text-lg sm:text-xl tracking-wider text-emeraldDeep"></span>
+            </a>
+
+            <a href="index.html" class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border border-emeraldDeep/30 text-emeraldDeep text-xs sm:text-sm font-semibold hover:bg-emeraldDeep hover:text-white transition-all">
+                <i data-lucide="arrow-left" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+                <span>Home</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Registration Section -->
+    <main class="flex-grow flex items-center justify-center py-6 sm:py-12 px-3 sm:px-6 relative">
+        <div class="w-full max-w-lg mx-auto relative z-10">
+            <div class="glass-card-dark p-5 sm:p-8 rounded-2xl sm:rounded-3xl border border-goldAccent/40 shadow-xl">
+                
+                <div class="text-center mb-6 sm:mb-8">
+                    <img src="70000.png" alt="Halawa Icon" class="h-10 sm:h-12 w-auto mx-auto mb-3 drop-shadow-md" onerror="this.onerror=null; this.src='https://via.placeholder.com/60x60?text=Icon';">
+                    <h1 class="text-2xl sm:text-3xl font-serif text-white font-bold mb-1">Member Registration</h1>
+                    <p class="text-goldLight/90 text-xs sm:text-sm font-medium">
+                        August 22, 2026 • Al Hikma Centre, Nandi
+                    </p>
+                </div>
+
+                <form id="registrationForm" class="space-y-4 sm:space-y-5">
+                    
+                    <!-- Full Name -->
+                    <div>
+                        <label for="name" class="block text-xs sm:text-sm font-medium text-goldLight mb-1.5 flex items-center gap-1.5">
+                            <i data-lucide="user" class="w-4 h-4 text-goldAccent"></i>
+                            <span>Full Name <span class="text-red-400">*</span></span>
+                        </label>
+                        <input type="text" id="name" name="name" required placeholder="Enter your full name" 
+                               class="w-full px-3.5 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-goldAccent focus:ring-2 focus:ring-goldAccent/50 transition">
+                    </div>
+
+                    <!-- Mobile Number Field (Strict Mobile Validation) -->
+                    <div>
+                        <label for="mobile" class="block text-xs sm:text-sm font-medium text-goldLight mb-1.5 flex items-center gap-1.5">
+                            <i data-lucide="phone" class="w-4 h-4 text-goldAccent"></i>
+                            <span>Mobile Number <span class="text-red-400">*</span></span>
+                        </label>
+                        <input type="tel" id="mobile" name="mobile" required 
+                               pattern="[6-9][0-9]{9}" 
+                               maxlength="10" 
+                               inputmode="numeric" 
+                               placeholder="10-digit mobile number" 
+                               class="w-full px-3.5 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-goldAccent focus:ring-2 focus:ring-goldAccent/50 transition">
+                        
+                        <!-- Error Message Text -->
+                        <span id="mobileError" class="text-red-300 text-xs hidden mt-1.5 font-medium flex items-center gap-1">
+                            <i data-lucide="alert-circle" class="w-3.5 h-3.5 inline"></i>
+                            <span id="mobileErrorText">Valid 10 digit mobile number </span>
+                        </span>
+                    </div>
+
+                    <!-- Unit Selection -->
+                    <div>
+                        <label for="unit" class="block text-xs sm:text-sm font-medium text-goldLight mb-1.5 flex items-center gap-1.5">
+                            <i data-lucide="map-pin" class="w-4 h-4 text-goldAccent"></i>
+                            <span>Select Unit <span class="text-red-400">*</span></span>
+                        </label>
+                        <div class="relative">
+                            <select id="unit" name="unit" required 
+                                    class="w-full px-3.5 py-3 rounded-xl bg-emeraldDark border border-white/20 text-white focus:outline-none focus:border-goldAccent focus:ring-2 focus:ring-goldAccent/50 transition appearance-none cursor-pointer">
+                                <option value="" disabled selected>Choose your unit</option>
+                                <option value="Payyoli">Payyoli</option>
+                                <option value="Nandi">Nandi</option>
+                                <option value="Thurayur">Thurayur</option>
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-goldAccent">
+                                <i data-lucide="chevron-down" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="submitBtn" class="w-full py-3.5 sm:py-4 rounded-xl bg-goldAccent active:bg-yellow-500 hover:bg-yellow-500 text-emeraldDark font-bold text-base sm:text-lg shadow-lg transition-all flex items-center justify-center gap-2 mt-6">
+                        <span>Submit Registration</span>
+                        <i data-lucide="send" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                    </button>
+                </form>
+
+                <!-- Feedback Message -->
+                <div id="formMessage" class="hidden mt-4 p-3.5 rounded-xl text-center text-xs sm:text-sm font-semibold transition-all"></div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="py-12 border-t border-goldAccent/20 bg-creamBg">
+        <div class="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
+            
+            <div class="flex items-center gap-3">
+                <img src="7001.png" alt="Halawa Logo" class="h-8 w-auto" onerror="this.onerror=null; this.src='https://via.placeholder.com/100x30?text=Halawa';">
+                <span class="font-serif font-bold text-lg text-emeraldDeep tracking-wider"></span>
+            </div>
+
+            <div class="text-xs text-subText/70">
+                &copy; 2026 Halawa. All Rights Reserved.
+            </div>
+
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        lucide.createIcons();
+
+        // Google Apps Script URL
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbwji8eSDfoUWXbcLNSAHLjjyNeBM604wkpEqtiIPeHrgFCTNDEoMJSbggBru00-NR-j2Q/exec';
+        
+        const form = document.getElementById('registrationForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const formMessage = document.getElementById('formMessage');
+        const mobileInput = document.getElementById('mobile');
+        const mobileError = document.getElementById('mobileError');
+        const mobileErrorText = document.getElementById('mobileErrorText');
+
+        // Validation Function for Indian Mobile Numbers
+        function validateMobileNumber(value) {
+            // Check if exact 10 digits and starts with 6, 7, 8, or 9
+            const mobileRegex = /^[6-9]\d{9}$/;
+            return mobileRegex.test(value);
+        }
+
+        // Live input check as user types
+        mobileInput.addEventListener('input', function(e) {
+            // Remove non-numeric characters automatically
+            let cleanValue = this.value.replace(/[^0-9]/g, '');
+            
+            // Strictly check first digit (must be 6, 7, 8, or 9)
+            if (cleanValue.length > 0 && !['6', '7', '8', '9'].includes(cleanValue.charAt(0))) {
+                cleanValue = ''; // Clear if start digit is invalid (0-5)
+                mobileErrorText.innerText = ' Enter Indian model mobile number.';
+                mobileError.classList.remove('hidden');
+            } else {
+                mobileError.classList.add('hidden');
+            }
+
+            // Max length restriction to 10
+            if (cleanValue.length > 10) {
+                cleanValue = cleanValue.slice(0, 10);
+            }
+
+            this.value = cleanValue;
+
+            // Live validation check on length
+            if (cleanValue.length > 0 && cleanValue.length < 10) {
+                mobileErrorText.innerText = 'Type exact 10 digits  ( Add balance ' + (10 - cleanValue.length) + 'digits )';
+                mobileError.classList.remove('hidden');
+            } else if (cleanValue.length === 10) {
+                mobileError.classList.add('hidden');
+            }
+        });
+
+        // Form Submission Logic
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const mobileVal = mobileInput.value.trim();
+
+            // Strict checking before submit
+            if (!validateMobileNumber(mobileVal)) {
+                mobileErrorText.innerText = 'Dayaavaayi correct 10-digit mobile number nalku!';
+                mobileError.classList.remove('hidden');
+                mobileInput.focus();
+                return;
+            }
+
+            // Hide error if valid
+            mobileError.classList.add('hidden');
+
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+            submitBtn.innerHTML = '<span>Submitting...</span><i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>';
+            lucide.createIcons();
+
+            fetch(scriptURL, { 
+                method: 'POST', 
+                body: new FormData(form) 
+            })
+            .then(response => {
+                formMessage.classList.remove('hidden', 'bg-red-500/20', 'text-red-200', 'border-red-500/30');
+                formMessage.classList.add('bg-emerald-500/20', 'text-emerald-200', 'border', 'border-emerald-500/30');
+                formMessage.innerHTML = '✨ Registration completed successfully!';
+                
+                form.reset();
+                resetButton();
+            })
+            .catch(error => {
+                console.error('Error!', error.message);
+                formMessage.classList.remove('hidden', 'bg-emerald-500/20', 'text-emerald-200', 'border-emerald-500/30');
+                formMessage.classList.add('bg-red-500/20', 'text-red-200', 'border', 'border-red-500/30');
+                formMessage.innerHTML = '❌ Something went wrong. Please try again.';
+                
+                resetButton();
+            });
+        });
+
+        function resetButton() {
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+            submitBtn.innerHTML = '<span>Submit Registration</span><i data-lucide="send" class="w-5 h-5"></i>';
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
+
