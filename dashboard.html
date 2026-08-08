@@ -142,7 +142,7 @@
 
                         <button type="button" id="fingerprintBtn" class="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 border border-goldAccent/40 text-goldLight font-semibold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer">
                             <i data-lucide="fingerprint" class="w-4 h-4 text-goldAccent"></i>
-                            <span id="fingerprintBtnText">Fingerprint</span>
+                            <span>Fingerprint</span>
                         </button>
                     </div>
                 </form>
@@ -297,6 +297,20 @@
         </div>
     </div>
 
+    <!-- Success Modal Popup -->
+    <div id="successModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-6 max-w-xs w-full text-center space-y-4 border border-goldAccent/40 shadow-2xl">
+            <div class="w-12 h-12 rounded-full bg-emerald-100 text-emeraldDeep flex items-center justify-center mx-auto">
+                <i data-lucide="check-circle" class="w-8 h-8"></i>
+            </div>
+            <h3 id="successTitle" class="font-bold text-lg text-emeraldDeep">Success!</h3>
+            <p id="successMessage" class="text-xs text-subText">Action completed successfully.</p>
+            <button id="closeSuccessBtn" class="w-full py-2.5 bg-emeraldDeep text-white font-bold rounded-xl text-xs active:scale-95 transition-all">
+                OK
+            </button>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="py-12 border-t border-goldAccent/20 bg-creamBg">
         <div class="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
@@ -337,7 +351,6 @@
 
         let capturedDescriptors = [];
         let anglesCompleted = { center: false, left: false, right: false, up: false, down: false };
-        let blinkDetected = false;
         let preloadedCloudBiometrics = null;
 
         const loginSection = document.getElementById('loginSection');
@@ -355,7 +368,6 @@
 
         const faceIdBtn = document.getElementById('faceIdBtn');
         const fingerprintBtn = document.getElementById('fingerprintBtn');
-        const fingerprintBtnText = document.getElementById('fingerprintBtnText');
         const setupFaceBtn = document.getElementById('setupFaceBtn');
         const setupFingerprintBtn = document.getElementById('setupFingerprintBtn');
 
@@ -369,6 +381,19 @@
         const progressBar = document.getElementById('progressBar');
         const progressText = document.getElementById('progressText');
         const instructionText = document.getElementById('instructionText');
+
+        const successModal = document.getElementById('successModal');
+        const successMessage = document.getElementById('successMessage');
+        const closeSuccessBtn = document.getElementById('closeSuccessBtn');
+
+        function showSuccessAlert(msg) {
+            successMessage.innerText = msg;
+            successModal.classList.remove('hidden');
+        }
+
+        closeSuccessBtn.addEventListener('click', () => {
+            successModal.classList.add('hidden');
+        });
 
         // Robust Base64 Helpers for WebAuthn Buffers
         function bufferToBase64(buffer) {
@@ -468,7 +493,6 @@
         function resetEnrollmentProgress() {
             capturedDescriptors = [];
             anglesCompleted = { center: false, left: false, right: false, up: false, down: false };
-            blinkDetected = false;
             updateProgressUI();
         }
 
@@ -547,10 +571,8 @@
                 updatedAt: new Date().toISOString()
             }).then(() => {
                 scanStatusLabel.innerText = "✅ Face ID Successfully Saved!";
-                alert("✅ Face ID scan saved successfully to Firebase!");
-                setTimeout(() => {
-                    stopCamera();
-                }, 500);
+                stopCamera();
+                showSuccessAlert("Face ID Biometrics successfully registered and saved!");
             }).catch(err => {
                 console.error("Firebase Error:", err);
                 nextStepBtn.disabled = false;
@@ -587,6 +609,7 @@
                 if (!webcamVideo.videoWidth) return;
 
                 const detection = await faceapi.detectSingleFace(webcamVideo, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 }))
+                    .withFaceLandmarks()
                     .withFaceDescriptor();
 
                 if (!detection) {
@@ -622,7 +645,7 @@
         faceIdBtn.addEventListener('click', () => openCamera(false));
         setupFaceBtn.addEventListener('click', () => openCamera(true));
 
-        // SETUP FINGERPRINT
+        // SETUP FINGERPRINT (WITH POPUP ALERT)
         setupFingerprintBtn.addEventListener('click', async () => {
             if (!window.PublicKeyCredential) {
                 alert('❌ Biometric Fingerprint / Passkey is not supported on this browser or device.');
@@ -661,7 +684,7 @@
                         password: currentAdminPassword,
                         updatedAt: new Date().toISOString()
                     });
-                    alert('✅ Fingerprint Biometrics successfully registered and saved to Cloud!');
+                    showSuccessAlert("Fingerprint Biometrics successfully registered and saved to Cloud!");
                 }
             } catch (err) { 
                 console.error("Fingerprint Setup Error:", err);
@@ -669,9 +692,8 @@
             }
         });
 
-        // FINGERPRINT LOGIN (FIXED RESPONSE & ERROR HANDLING)
-        fingerprintBtn.addEventListener('click', async (e) => {
-            e.preventDefault();
+        // FINGERPRINT LOGIN (DIRECT BROWSER NATIVE TRIGGER)
+        fingerprintBtn.addEventListener('click', async () => {
             loginError.classList.add('hidden');
             
             if (!window.PublicKeyCredential) {
@@ -680,9 +702,6 @@
                 return;
             }
 
-            fingerprintBtn.disabled = true;
-            fingerprintBtnText.innerText = "Scanning...";
-
             try {
                 const snapshot = await db.ref('admin_biometrics/fingerprint').once('value');
                 const data = snapshot.val();
@@ -690,8 +709,6 @@
                 if (!data || !data.credId) {
                     loginError.innerText = '❌ No Fingerprint registered in Cloud! First login with Password and click "Set Fingerprint".';
                     loginError.classList.remove('hidden'); 
-                    fingerprintBtn.disabled = false;
-                    fingerprintBtnText.innerText = "Fingerprint";
                     return;
                 }
 
@@ -699,7 +716,7 @@
                 window.crypto.getRandomValues(challenge);
                 const rawCredId = base64ToBuffer(data.credId);
 
-                // Open Native Device Fingerprint Scanner
+                // Triggers OS System Biometric Authenticator Directly
                 const assertion = await navigator.credentials.get({
                     publicKey: {
                         challenge: challenge,
@@ -713,7 +730,6 @@
                 });
 
                 if (assertion) { 
-                    fingerprintBtnText.innerText = "Verified!";
                     currentAdminPassword = data.password; 
                     fetchDashboardData(); 
                 }
@@ -721,9 +737,6 @@
                 console.error("Fingerprint Verify Error:", err);
                 loginError.innerText = '❌ Fingerprint Failed: ' + (err.message || 'Verification Cancelled'); 
                 loginError.classList.remove('hidden'); 
-            } finally {
-                fingerprintBtn.disabled = false;
-                fingerprintBtnText.innerText = "Fingerprint";
             }
         });
 
