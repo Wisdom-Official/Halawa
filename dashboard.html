@@ -38,6 +38,9 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <!-- face-api.js CDN for AI Face Landmarks Detection -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+
     <style>
         body {
             background-color: #FCFBF8;
@@ -123,7 +126,6 @@
                         <div class="flex-grow border-t border-white/20"></div>
                     </div>
 
-                    <!-- Separate Buttons for Face ID and Fingerprint -->
                     <div class="grid grid-cols-2 gap-2.5">
                         <button type="button" id="faceIdBtn" class="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 border border-goldAccent/40 text-goldLight font-semibold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer">
                             <i data-lucide="scan-face" class="w-4 h-4 text-goldAccent"></i>
@@ -208,7 +210,7 @@
                     </div>
 
                     <!-- Setup Face ID Button -->
-                    <button id="setupFaceBtn" title="Register Admin Face ID" class="px-3 py-2 bg-emeraldDeep/10 hover:bg-emeraldDeep/20 border border-emeraldDeep/30 text-emeraldDeep rounded-lg sm:rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 active:scale-95 shadow-sm cursor-pointer">
+                    <button id="setupFaceBtn" title="Register 360 Face ID" class="px-3 py-2 bg-emeraldDeep/10 hover:bg-emeraldDeep/20 border border-emeraldDeep/30 text-emeraldDeep rounded-lg sm:rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 active:scale-95 shadow-sm cursor-pointer">
                         <i data-lucide="scan-face" class="w-4 h-4 text-emeraldDeep"></i>
                         <span class="hidden sm:inline">Set Face ID</span>
                     </button>
@@ -229,7 +231,6 @@
             <!-- Members Data Table / Mobile Card View -->
             <div class="glass-card rounded-xl sm:rounded-2xl border border-goldAccent/30 overflow-hidden shadow-md">
                 
-                <!-- Desktop Table View -->
                 <div class="hidden md:block overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
@@ -245,10 +246,8 @@
                     </table>
                 </div>
 
-                <!-- Mobile Card List View -->
                 <div id="mobileCardList" class="block md:hidden divide-y divide-goldAccent/15 p-2"></div>
 
-                <!-- Empty State -->
                 <div id="emptyState" class="hidden p-8 sm:p-12 text-center">
                     <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-emeraldDeep/10 text-emeraldDeep flex items-center justify-center mx-auto mb-2">
                         <i data-lucide="inbox" class="w-5 h-5 sm:w-6 sm:h-6"></i>
@@ -262,24 +261,32 @@
 
     </main>
 
-    <!-- Camera Modal for Fully Automatic Face ID Scanning -->
+    <!-- Camera Modal with Live Progress Bar & AI Detection -->
     <div id="cameraModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] hidden flex flex-col items-center justify-center p-4">
         <div class="bg-white rounded-2xl p-5 max-w-sm w-full text-center space-y-4 border border-goldAccent/40 shadow-2xl relative">
-            <h3 id="cameraModalTitle" class="font-serif font-bold text-lg text-emeraldDeep">Face ID System</h3>
-            <p id="cameraModalDesc" class="text-xs text-subText">Position your face inside the circle</p>
+            <h3 id="cameraModalTitle" class="font-serif font-bold text-lg text-emeraldDeep">AI Face ID</h3>
+            <p id="cameraModalDesc" class="text-xs text-subText">Slowly move face in all directions</p>
             
             <div class="relative w-full aspect-square bg-black rounded-xl overflow-hidden border-2 border-goldAccent flex items-center justify-center">
                 <video id="webcamVideo" autoplay playsinline class="w-full h-full object-cover transform -scale-x-100"></video>
-                <!-- Central Focus Ring -->
-                <div id="scanRing" class="absolute inset-0 border-4 border-goldAccent rounded-full m-8 pointer-events-none shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]"></div>
+                <canvas id="faceOverlay" class="absolute inset-0 w-full h-full pointer-events-none transform -scale-x-100"></canvas>
+                <div id="scanRing" class="absolute inset-0 border-4 border-goldAccent rounded-full m-6 pointer-events-none shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]"></div>
             </div>
 
-            <!-- Off-screen processing canvas -->
-            <canvas id="faceCanvas" class="hidden"></canvas>
+            <!-- Live Visible 100% Enrollment Progress Box -->
+            <div id="progressContainer" class="space-y-1.5 hidden">
+                <div class="flex justify-between text-xs font-bold text-emeraldDeep">
+                    <span id="instructionText">Turn Head Slowly...</span>
+                    <span id="progressText">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 h-3 rounded-full overflow-hidden p-0.5 border border-goldAccent/30">
+                    <div id="progressBar" class="bg-goldAccent h-full w-0 rounded-full transition-all duration-200"></div>
+                </div>
+            </div>
 
             <div id="scanStatusText" class="text-xs font-bold text-emeraldDeep flex items-center justify-center gap-2">
                 <div class="w-2 h-2 rounded-full bg-emeraldDeep animate-ping"></div>
-                <span id="scanStatusLabel">Scanning face automatically...</span>
+                <span id="scanStatusLabel">Initializing AI models...</span>
             </div>
 
             <div class="flex items-center gap-2 pt-1">
@@ -313,7 +320,13 @@
         let currentAdminPassword = '';
         let selectedUnitFilter = 'All';
         let cameraStream = null;
-        let autoScanInterval = null;
+        let isSetupMode = false;
+        let faceModelsLoaded = false;
+        let scanInterval = null;
+
+        // 360 Degrees Capture Tracking
+        let capturedDescriptors = [];
+        let anglesCompleted = { center: false, left: false, right: false, up: false, down: false };
 
         const loginSection = document.getElementById('loginSection');
         const dashboardSection = document.getElementById('dashboardSection');
@@ -337,10 +350,13 @@
         const cameraModalTitle = document.getElementById('cameraModalTitle');
         const cameraModalDesc = document.getElementById('cameraModalDesc');
         const webcamVideo = document.getElementById('webcamVideo');
-        const faceCanvas = document.getElementById('faceCanvas');
+        const faceOverlay = document.getElementById('faceOverlay');
         const closeCameraBtn = document.getElementById('closeCameraBtn');
-        const scanStatusText = document.getElementById('scanStatusText');
         const scanStatusLabel = document.getElementById('scanStatusLabel');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const instructionText = document.getElementById('instructionText');
 
         function bufferToBase64(buffer) {
             return btoa(String.fromCharCode(...new Uint8Array(buffer)));
@@ -381,124 +397,66 @@
         });
 
         // =====================================================================
-        // ADVANCED FULL-FACE AUTO SCANNER & FEATURE EXTRACTION
+        // LOAD AI FACE-API MODELS (TensorFlow Facial Landmarks & Embeddings)
         // =====================================================================
-
-        function extractFullFaceVector() {
-            const context = faceCanvas.getContext('2d');
-            faceCanvas.width = 300;
-            faceCanvas.height = 300;
-
-            const videoWidth = webcamVideo.videoWidth || 640;
-            const videoHeight = webcamVideo.videoHeight || 640;
-            const cropSize = Math.min(videoWidth, videoHeight) * 0.75;
-            const startX = (videoWidth - cropSize) / 2;
-            const startY = (videoHeight - cropSize) / 2;
-
-            context.drawImage(webcamVideo, startX, startY, cropSize, cropSize, 0, 0, 300, 300);
-
-            const gridSize = 24;
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = gridSize;
-            tempCanvas.height = gridSize;
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.drawImage(faceCanvas, 0, 0, gridSize, gridSize);
-
-            const imgData = tempCtx.getImageData(0, 0, gridSize, gridSize);
-            const data = imgData.data;
-            const grays = new Float32Array(gridSize * gridSize);
-
-            for (let i = 0; i < data.length; i += 4) {
-                grays[i / 4] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        async function loadFaceApiModels() {
+            if (faceModelsLoaded) return true;
+            try {
+                scanStatusLabel.innerText = "Loading AI Face Models...";
+                const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+                await face-api.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+                await face-api.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+                await face-api.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+                faceModelsLoaded = true;
+                return true;
+            } catch (err) {
+                console.error("AI Model Load Failed:", err);
+                scanStatusLabel.innerText = "❌ Failed to load AI face recognition models.";
+                return false;
             }
-
-            const histogram = new Int32Array(256);
-            for (let i = 0; i < grays.length; i++) histogram[Math.floor(grays[i])]++;
-
-            const cdf = new Float32Array(256);
-            let cumulative = 0;
-            for (let i = 0; i < 256; i++) {
-                cumulative += histogram[i];
-                cdf[i] = cumulative / grays.length;
-            }
-
-            const featureVector = [];
-            for (let y = 1; y < gridSize - 1; y++) {
-                for (let x = 1; x < gridSize - 1; x++) {
-                    const idx = y * gridSize + x;
-                    const val = cdf[Math.floor(grays[idx])] * 255;
-                    const gx = val - (cdf[Math.floor(grays[idx - 1])] * 255);
-                    const gy = val - (cdf[Math.floor(grays[idx - gridSize])] * 255);
-                    featureVector.push(Math.sqrt(gx * gx + gy * gy));
-                }
-            }
-
-            let sum = 0;
-            for (let i = 0; i < featureVector.length; i++) sum += featureVector[i];
-            const mean = sum / featureVector.length;
-
-            let variance = 0;
-            for (let i = 0; i < featureVector.length; i++) {
-                featureVector[i] -= mean;
-                variance += featureVector[i] * featureVector[i];
-            }
-            const stdDev = Math.sqrt(variance / featureVector.length) || 1;
-
-            for (let i = 0; i < featureVector.length; i++) {
-                featureVector[i] /= stdDev;
-            }
-
-            return featureVector;
         }
 
-        function calculateSimilarityScore(vecA, vecB) {
-            if (!vecA || !vecB || vecA.length !== vecB.length) return 0;
-            let dotProduct = 0, normA = 0, normB = 0;
-            for (let i = 0; i < vecA.length; i++) {
-                dotProduct += vecA[i] * vecB[i];
-                normA += vecA[i] * vecA[i];
-                normB += vecB[i] * vecB[i];
-            }
-            if (normA === 0 || normB === 0) return 0;
-            return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-        }
+        // Camera Controls
+        async function openCamera(setup = false) {
+            isSetupMode = setup;
+            cameraModalTitle.innerText = setup ? 'Full AI Face Registration' : 'Face ID Auto-Scan';
+            cameraModalDesc.innerText = setup ? 'Rotate face slowly to complete 100% scan' : 'Look at camera to unlock';
 
-        async function openCamera(isSetup = false) {
-            cameraModalTitle.innerText = isSetup ? 'Automatic Face Registration' : 'Face ID Login';
-            cameraModalDesc.innerText = isSetup ? 'Hold still. Scanning full face automatically...' : 'Looking at screen unlocks automatically...';
-            scanStatusLabel.innerText = isSetup ? 'Scanning and saving face...' : 'Analyzing face automatically...';
+            if (setup) {
+                progressContainer.classList.remove('hidden');
+                resetEnrollmentProgress();
+            } else {
+                progressContainer.classList.add('hidden');
+            }
+
+            cameraModal.classList.remove('hidden');
 
             try {
                 cameraStream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } }
                 });
                 webcamVideo.srcObject = cameraStream;
-                cameraModal.classList.remove('hidden');
 
-                if (isSetup) {
-                    setTimeout(() => {
-                        const vector = extractFullFaceVector();
-                        localStorage.setItem('halawa_face_vector', JSON.stringify(vector));
-                        localStorage.setItem('halawa_face_saved_pass', currentAdminPassword);
-                        scanStatusLabel.innerText = '✅ Face Registered Successfully!';
-                        setTimeout(() => {
-                            stopCamera();
-                            alert('✅ Full Face ID Registered Successfully!');
-                        }, 800);
-                    }, 1500);
+                const loaded = await loadFaceApiModels();
+                if (!loaded) return;
+
+                if (isSetupMode) {
+                    startAiEnrollmentProcess();
                 } else {
-                    startAutomaticFaceScan();
+                    startAiVerificationProcess();
                 }
+
             } catch (err) {
                 console.error(err);
-                alert('❌ Camera access error.');
+                alert('❌ Unable to access camera.');
+                stopCamera();
             }
         }
 
         function stopCamera() {
-            if (autoScanInterval) {
-                clearInterval(autoScanInterval);
-                autoScanInterval = null;
+            if (scanInterval) {
+                clearInterval(scanInterval);
+                scanInterval = null;
             }
             if (cameraStream) {
                 cameraStream.getTracks().forEach(track => track.stop());
@@ -509,46 +467,170 @@
 
         closeCameraBtn.addEventListener('click', stopCamera);
 
-        function startAutomaticFaceScan() {
-            if (autoScanInterval) clearInterval(autoScanInterval);
+        function resetEnrollmentProgress() {
+            capturedDescriptors = [];
+            anglesCompleted = { center: false, left: false, right: false, up: false, down: false };
+            updateProgressUI();
+        }
 
-            const rawVector = localStorage.getItem('halawa_face_vector');
+        function updateProgressUI() {
+            const count = Object.values(anglesCompleted).filter(Boolean).length;
+            const percent = Math.min(100, count * 20);
+            
+            progressBar.style.width = `${percent}%`;
+            progressText.innerText = `${percent}%`;
+
+            if (!anglesCompleted.center) {
+                instructionText.innerText = "Look Straight Ahead";
+            } else if (!anglesCompleted.left) {
+                instructionText.innerText = "Turn Head Slightly Left";
+            } else if (!anglesCompleted.right) {
+                instructionText.innerText = "Turn Head Slightly Right";
+            } else if (!anglesCompleted.up) {
+                instructionText.innerText = "Tilt Head Slightly Up";
+            } else if (!anglesCompleted.down) {
+                instructionText.innerText = "Tilt Head Slightly Down";
+            } else {
+                instructionText.innerText = "✅ 100% Scan Complete!";
+            }
+        }
+
+        // =====================================================================
+        // AI ENROLLMENT (CAPTURES 68 LANDMARKS IN 5 ANGLES & MAKES 100% PROGRESS)
+        // =====================================================================
+        function startAiEnrollmentProcess() {
+            scanStatusLabel.innerText = "Align face in the circle...";
+
+            scanInterval = setInterval(async () => {
+                if (!webcamVideo.videoWidth) return;
+
+                // Detect Face with Landmarks (Facial features like Eyes, Nose, Jaw)
+                const detection = await face-api.detectSingleFace(webcamVideo, new face-api.TinyFaceDetectorOptions())
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
+
+                if (!detection) {
+                    scanStatusLabel.innerText = "Searching for face...";
+                    return;
+                }
+
+                scanStatusLabel.innerText = "Scanning facial landmarks...";
+
+                const landmarks = detection.landmarks;
+                const nose = landmarks.getNose()[0];
+                const jaw = landmarks.getJawOutline();
+                const jawLeft = jaw[0];
+                const jawRight = jaw[16];
+
+                // Calculate relative head pose angle
+                const faceWidth = jawRight.x - jawLeft.x;
+                const noseRelX = (nose.x - jawLeft.x) / faceWidth;
+
+                const descriptorArray = Array.from(detection.descriptor);
+
+                if (!anglesCompleted.center && noseRelX >= 0.4 && noseRelX <= 0.6) {
+                    anglesCompleted.center = true;
+                    capturedDescriptors.push(descriptorArray);
+                } else if (!anglesCompleted.left && noseRelX < 0.38) {
+                    anglesCompleted.left = true;
+                    capturedDescriptors.push(descriptorArray);
+                } else if (!anglesCompleted.right && noseRelX > 0.62) {
+                    anglesCompleted.right = true;
+                    capturedDescriptors.push(descriptorArray);
+                } else if (!anglesCompleted.up && nose.y < landmarks.getLeftEye()[0].y - 5) {
+                    anglesCompleted.up = true;
+                    capturedDescriptors.push(descriptorArray);
+                } else if (!anglesCompleted.down && nose.y > landmarks.getMouth()[0].y - 25) {
+                    anglesCompleted.down = true;
+                    capturedDescriptors.push(descriptorArray);
+                }
+
+                updateProgressUI();
+
+                // Once 100% Complete
+                if (Object.values(anglesCompleted).every(Boolean)) {
+                    clearInterval(scanInterval);
+                    scanInterval = null;
+
+                    localStorage.setItem('halawa_ai_face_descriptors', JSON.stringify(capturedDescriptors));
+                    localStorage.setItem('halawa_face_saved_pass', currentAdminPassword);
+
+                    scanStatusLabel.innerText = "✅ Face ID Enrolled Successfully!";
+                    setTimeout(() => {
+                        stopCamera();
+                        alert('✅ 100% Multi-Angle AI Face ID setup completed! Hair, lighting, or background changes will no longer affect verification.');
+                    }, 800);
+                }
+
+            }, 250);
+        }
+
+        // =====================================================================
+        // AUTOMATIC VERIFICATION WITH EUCLIDEAN DISTANCE (FACIAL FEATURE MATCHING)
+        // =====================================================================
+        function startAiVerificationProcess() {
+            const rawDescriptors = localStorage.getItem('halawa_ai_face_descriptors');
             const savedPass = localStorage.getItem('halawa_face_saved_pass');
 
-            if (!rawVector || !savedPass) {
+            if (!rawDescriptors || !savedPass) {
                 stopCamera();
-                loginError.innerText = '❌ Face ID non-existent. Login via password first and set Face ID.';
+                loginError.innerText = '❌ Face ID not registered. Login with password first and click "Set Face ID".';
                 loginError.classList.remove('hidden');
                 return;
             }
 
-            const registeredVector = JSON.parse(rawVector);
+            const savedDescriptorsList = JSON.parse(rawDescriptors);
+            scanStatusLabel.innerText = "Scanning face...";
 
-            autoScanInterval = setInterval(() => {
-                if (!cameraStream || !webcamVideo.videoWidth) return;
+            scanInterval = setInterval(async () => {
+                if (!webcamVideo.videoWidth) return;
 
-                const currentVector = extractFullFaceVector();
-                const score = calculateSimilarityScore(registeredVector, currentVector);
+                const detection = await face-api.detectSingleFace(webcamVideo, new face-api.TinyFaceDetectorOptions())
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
 
-                if (score >= 0.55) {
-                    scanStatusLabel.innerText = '✅ Access Granted! Logging in...';
-                    stopCamera();
-                    currentAdminPassword = savedPass;
-                    fetchDashboardData();
+                if (!detection) {
+                    scanStatusLabel.innerText = "Position face inside ring...";
+                    return;
                 }
-            }, 300);
+
+                const liveDescriptor = detection.descriptor;
+
+                // Compare live face vector against all saved angles using Euclidean Distance
+                let minDistance = 1.0;
+                for (let savedDesc of savedDescriptorsList) {
+                    const distance = face-api.euclideanDistance(liveDescriptor, new Float32Array(savedDesc));
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                    }
+                }
+
+                console.log("Best Matching Face Distance:", minDistance);
+
+                // Euclidean distance threshold <= 0.45 means identical face (Ignores background & hair)
+                if (minDistance <= 0.45) {
+                    scanStatusLabel.innerText = "✅ Face Recognized! Unlocking...";
+                    clearInterval(scanInterval);
+                    scanInterval = null;
+
+                    setTimeout(() => {
+                        stopCamera();
+                        currentAdminPassword = savedPass;
+                        fetchDashboardData();
+                    }, 500);
+                }
+            }, 250);
         }
 
         faceIdBtn.addEventListener('click', () => openCamera(false));
         setupFaceBtn.addEventListener('click', () => openCamera(true));
 
         // ==========================================
-        // SECURE FINGERPRINT (WEBAUTHN WITH VERIFICATION)
+        // SECURE FINGERPRINT AUTHENTICATION
         // ==========================================
-
         setupFingerprintBtn.addEventListener('click', async () => {
             if (!window.PublicKeyCredential) {
-                alert('❌ Biometric authentication is not supported by this browser.');
+                alert('❌ Biometric authentication is not supported on this browser.');
                 return;
             }
 
@@ -567,7 +649,7 @@
                         },
                         pubKeyCredParams: [{ alg: -7, type: "public-key" }],
                         authenticatorSelection: { 
-                            userVerification: "required", // Strict verification
+                            userVerification: "required",
                             authenticatorAttachment: "platform"
                         },
                         timeout: 60000
@@ -608,7 +690,7 @@
                             id: base64ToBuffer(savedCredId),
                             type: 'public-key'
                         }],
-                        userVerification: "required", // Ensures authentic identity
+                        userVerification: "required",
                         timeout: 60000
                     }
                 });
@@ -627,7 +709,6 @@
         // ==========================================
         // FETCH DASHBOARD DATA
         // ==========================================
-
         function fetchDashboardData(callback) {
             loginBtn.disabled = true;
             loginBtn.innerHTML = '<span>Verifying...</span>';
