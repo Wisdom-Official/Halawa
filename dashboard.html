@@ -280,14 +280,14 @@
             </div>
 
             <div id="scanStatusText" class="text-xs font-bold text-emeraldDeep flex items-center justify-center gap-2">
-                <div class="w-2 h-2 rounded-full bg-emeraldDeep animate-ping"></div>
+                <div id="pingDot" class="w-2 h-2 rounded-full bg-emeraldDeep animate-ping"></div>
                 <span id="scanStatusLabel">Initializing AI Models...</span>
             </div>
 
             <div class="grid grid-cols-1 gap-2 pt-1">
-                <!-- NEXT BUTTON (Shows when 100% completed) -->
+                <!-- NEXT BUTTON -->
                 <button id="nextStepBtn" class="hidden w-full py-3 bg-emeraldDeep text-white font-bold rounded-xl text-sm shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
-                    <span>Next / സബ്മിറ്റ് ചെയ്യുക</span>
+                    <span>Save & Continue</span>
                     <i data-lucide="arrow-right" class="w-4 h-4"></i>
                 </button>
 
@@ -336,7 +336,6 @@
         let faceModelsLoaded = false;
         let scanInterval = null;
 
-        // Enrollment States
         let capturedDescriptors = [];
         let anglesCompleted = { center: false, left: false, right: false, up: false, down: false };
         let blinkDetected = false;
@@ -404,11 +403,10 @@
         logoutBtn.addEventListener('click', () => { sessionStorage.removeItem('halawa_admin_pass'); location.reload(); });
         refreshBtn.addEventListener('click', () => { refreshBtn.classList.add('animate-spin'); fetchDashboardData(() => refreshBtn.classList.remove('animate-spin')); });
 
-        // Fast & Reliable Model Loading
         async function loadFaceApiModels() {
             if (faceModelsLoaded) return true;
             try {
-                scanStatusLabel.innerText = "Loading AI Face Models...";
+                scanStatusLabel.innerText = "Loading AI Models...";
                 const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
                 
                 await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
@@ -427,13 +425,14 @@
         async function openCamera(setup = false) {
             isSetupMode = setup;
             nextStepBtn.classList.add('hidden');
+            nextStepBtn.disabled = false;
+            nextStepBtn.innerHTML = '<span>Save & Continue</span><i data-lucide="arrow-right" class="w-4 h-4"></i>';
             progressContainer.classList.toggle('hidden', !setup);
             if (setup) resetEnrollmentProgress();
 
             cameraModal.classList.remove('hidden');
 
             try {
-                // Background download from cloud for fast response
                 if (!setup) {
                     db.ref('admin_biometrics/face_id').once('value').then(snap => {
                         preloadedCloudBiometrics = snap.val();
@@ -450,7 +449,7 @@
                 else startAiVerificationProcess();
 
             } catch (err) {
-                alert('❌ Unable to access camera. Check permissions.');
+                alert('❌ Unable to access camera. Check browser permissions.');
                 stopCamera();
             }
         }
@@ -493,14 +492,12 @@
             return (v1 + v2) / (2.0 * h);
         }
 
-        // ENROLLMENT PROCESS (With NEXT Button)
         function startAiEnrollmentProcess() {
             scanStatusLabel.innerText = "Align face in frame...";
 
             scanInterval = setInterval(async () => {
                 if (!webcamVideo.videoWidth) return;
 
-                // Optimized for high speed
                 const detection = await faceapi.detectSingleFace(webcamVideo, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }))
                     .withFaceLandmarks()
                     .withFaceDescriptor();
@@ -536,7 +533,6 @@
 
                 updateProgressUI();
 
-                // WHEN 100% COMPLETE -> PAUSE SCAN & SHOW NEXT BUTTON
                 if (Object.values(anglesCompleted).every(Boolean)) {
                     clearInterval(scanInterval); scanInterval = null;
                     scanStatusLabel.innerText = "🎉 100% Face Scan Complete!";
@@ -546,37 +542,67 @@
             }, 120);
         }
 
-        // NEXT BUTTON CLICK EVENT
+        // NEXT BUTTON CLICK WITH TIMEOUT & ROBUST ERROR HANDLING
         nextStepBtn.addEventListener('click', function() {
             nextStepBtn.disabled = true;
             nextStepBtn.innerText = "Saving to Firebase...";
+            scanStatusLabel.innerText = "Connecting to Cloud Database...";
+
+            // 8 Second Timeout Setup
+            let isHandled = false;
+            const timeoutTimer = setTimeout(() => {
+                if (!isHandled) {
+                    isHandled = true;
+                    nextStepBtn.disabled = false;
+                    nextStepBtn.innerText = "Retry Saving";
+                    scanStatusLabel.innerText = "❌ Timeout: Firebase server taking too long. Check Rules/Network.";
+                    alert("❌ Save Timeout! Check if Firebase Realtime Database Rules allow write permissions.");
+                }
+            }, 8000);
 
             db.ref('admin_biometrics/face_id').set({
                 descriptors: capturedDescriptors,
                 password: currentAdminPassword,
                 updatedAt: new Date().toISOString()
             }).then(() => {
-                stopCamera();
-                alert('✅ Face ID successfully registered and saved to Firebase Cloud!');
+                if (!isHandled) {
+                    isHandled = true;
+                    clearTimeout(timeoutTimer);
+                    scanStatusLabel.innerText = "✅ Successfully Saved!";
+                    setTimeout(() => {
+                        stopCamera();
+                        alert('✅ Face ID successfully registered and saved to Firebase Cloud!');
+                    }, 400);
+                }
             }).catch(err => {
-                alert('❌ Firebase Error: ' + err.message);
-                nextStepBtn.disabled = false;
+                if (!isHandled) {
+                    isHandled = true;
+                    clearTimeout(timeoutTimer);
+                    console.error("Firebase Error:", err);
+                    nextStepBtn.disabled = false;
+                    nextStepBtn.innerText = "Retry Saving";
+                    scanStatusLabel.innerText = "❌ Firebase Error: " + err.message;
+                    alert("❌ Firebase Error: " + err.message + "\nCheck Rules setting in Firebase Console.");
+                }
             });
         });
 
-        // REAL-TIME VERIFICATION PROCESS (Fast)
         async function startAiVerificationProcess() {
             scanStatusLabel.innerText = "Connecting to Cloud...";
 
             let data = preloadedCloudBiometrics;
             if (!data) {
-                const snapshot = await db.ref('admin_biometrics/face_id').once('value');
-                data = snapshot.val();
+                try {
+                    const snapshot = await db.ref('admin_biometrics/face_id').once('value');
+                    data = snapshot.val();
+                } catch(e) {
+                    console.error("Fetch Error", e);
+                }
             }
 
             if (!data || !data.descriptors) {
                 stopCamera();
-                loginError.innerText = '❌ No Face ID registered in Cloud. Please log in with password and set Face ID.';
+                loginError.innerText = '❌ No Face ID registered in Cloud. Login with password and register Face ID first.';
                 loginError.classList.remove('hidden');
                 return;
             }
@@ -637,7 +663,6 @@
         faceIdBtn.addEventListener('click', () => openCamera(false));
         setupFaceBtn.addEventListener('click', () => openCamera(true));
 
-        // FIXED FINGERPRINT (WebAuthn API)
         setupFingerprintBtn.addEventListener('click', async () => {
             if (!window.PublicKeyCredential) {
                 alert('❌ Biometric Fingerprint is not supported on this browser/device.');
@@ -660,8 +685,8 @@
                             displayName: "Halawa Admin"
                         },
                         pubKeyCredParams: [
-                            { alg: -7, type: "public-key" },  // ES256
-                            { alg: -257, type: "public-key" } // RS256
+                            { alg: -7, type: "public-key" },
+                            { alg: -257, type: "public-key" }
                         ],
                         authenticatorSelection: {
                             authenticatorAttachment: "platform",
@@ -678,7 +703,7 @@
                         password: currentAdminPassword,
                         updatedAt: new Date().toISOString()
                     });
-                    alert('✅ Fingerprint saved and linked to Cloud successfully!');
+                    alert('✅ Fingerprint saved successfully!');
                 }
             } catch (err) { 
                 console.error("Fingerprint Setup Error:", err);
