@@ -38,8 +38,8 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- face-api.js CDN -->
-    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+    <!-- face-api.js CDN (defer മാറ്റിയത്) -->
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
 
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -310,7 +310,7 @@
         lucide.createIcons();
 
         // ----------------------------------------------------
-        // FIREBASE SETUP WITH YOUR EXACT CONFIG KEYS
+        // FIREBASE SETUP
         // ----------------------------------------------------
         const firebaseConfig = {
             apiKey: "AIzaSyCvdJey-Hx0HeAeOj1727dtiiBhM7tjUcM",
@@ -390,14 +390,17 @@
         logoutBtn.addEventListener('click', () => { sessionStorage.removeItem('halawa_admin_pass'); location.reload(); });
         refreshBtn.addEventListener('click', () => { refreshBtn.classList.add('animate-spin'); fetchDashboardData(() => refreshBtn.classList.remove('animate-spin')); });
 
+        // UPDATED: Reliable AI Model Loader
         async function loadFaceApiModels() {
             if (faceModelsLoaded) return true;
             try {
                 scanStatusLabel.innerText = "Loading AI Face Models...";
-                const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
-                await face-api.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-                await face-api.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-                await face-api.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+                const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+                
+                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+                
                 faceModelsLoaded = true;
                 return true;
             } catch (err) {
@@ -474,7 +477,7 @@
             scanInterval = setInterval(async () => {
                 if (!webcamVideo.videoWidth) return;
 
-                const detection = await face-api.detectSingleFace(webcamVideo, new face-api.TinyFaceDetectorOptions())
+                const detection = await faceapi.detectSingleFace(webcamVideo, new faceapi.TinyFaceDetectorOptions())
                     .withFaceLandmarks()
                     .withFaceDescriptor();
 
@@ -549,7 +552,7 @@
                 scanInterval = setInterval(async () => {
                     if (!webcamVideo.videoWidth) return;
 
-                    const detection = await face-api.detectSingleFace(webcamVideo, new face-api.TinyFaceDetectorOptions())
+                    const detection = await faceapi.detectSingleFace(webcamVideo, new faceapi.TinyFaceDetectorOptions())
                         .withFaceLandmarks()
                         .withFaceDescriptor();
 
@@ -578,7 +581,7 @@
                     let minDistance = 1.0;
 
                     for (let savedDesc of savedDescriptorsList) {
-                        const dist = face-api.euclideanDistance(liveDescriptor, new Float32Array(savedDesc));
+                        const dist = faceapi.euclideanDistance(liveDescriptor, new Float32Array(savedDesc));
                         if (dist < minDistance) minDistance = dist;
                     }
 
