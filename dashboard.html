@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Halawa | Pro Admin Dashboard</title>
+    <title>Halawa | Admin Dashboard</title>
     <link rel="icon" type="image/png" href="/favicon.png">
 
     <!-- Google Fonts -->
@@ -38,13 +38,6 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- face-api.js CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
-
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
-
     <style>
         body {
             background-color: #FCFBF8;
@@ -70,11 +63,6 @@
         .bg-pattern {
             background-image: radial-gradient(rgba(212, 175, 55, 0.15) 1px, transparent 1px);
             background-size: 24px 24px;
-        }
-
-        .scan-ring-active {
-            border-color: #10B981 !important;
-            box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
         }
 
         input {
@@ -116,9 +104,9 @@
                     <i data-lucide="lock" class="w-7 h-7 sm:w-8 sm:h-8"></i>
                 </div>
                 <h2 class="text-xl sm:text-2xl font-serif font-bold text-white mb-1.5">Admin Portal</h2>
-                <p class="text-goldLight/80 text-xs sm:text-sm mb-6">Choose authentication method</p>
+                <p class="text-goldLight/80 text-xs sm:text-sm mb-6">Enter password or use fingerprint to view members</p>
 
-                <form id="loginForm" class="space-y-3.5">
+                <form id="loginForm" class="space-y-4">
                     <div>
                         <input type="password" id="passwordInput" placeholder="Enter Admin Password"
                                class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-goldAccent focus:ring-2 focus:ring-goldAccent/50 transition text-center text-base sm:text-lg">
@@ -128,23 +116,17 @@
                         <i data-lucide="arrow-right" class="w-4 h-4 sm:w-5 sm:h-5"></i>
                     </button>
 
-                    <div class="relative flex py-1 items-center">
+                    <!-- Fingerprint Login Option -->
+                    <div id="biometricDivider" class="relative flex py-1 items-center">
                         <div class="flex-grow border-t border-white/20"></div>
-                        <span class="flex-shrink mx-3 text-white/50 text-xs font-semibold">OR BIOMETRICS</span>
+                        <span class="flex-shrink mx-3 text-white/50 text-xs font-semibold">OR</span>
                         <div class="flex-grow border-t border-white/20"></div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-2.5">
-                        <button type="button" id="faceIdBtn" class="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 border border-goldAccent/40 text-goldLight font-semibold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-                            <i data-lucide="scan-face" class="w-4 h-4 text-goldAccent"></i>
-                            <span>AI Face ID</span>
-                        </button>
-
-                        <button type="button" id="fingerprintBtn" class="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 border border-goldAccent/40 text-goldLight font-semibold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-                            <i data-lucide="fingerprint" class="w-4 h-4 text-goldAccent"></i>
-                            <span>Fingerprint</span>
-                        </button>
-                    </div>
+                    <button type="button" id="biometricBtn" class="w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 border border-goldAccent/40 text-goldLight font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer">
+                        <i data-lucide="fingerprint" class="w-5 h-5 text-goldAccent"></i>
+                        <span>Login with Fingerprint</span>
+                    </button>
                 </form>
 
                 <div id="loginError" class="hidden mt-4 text-xs font-semibold text-red-300 bg-red-500/20 py-2.5 px-3.5 rounded-lg border border-red-500/30"></div>
@@ -153,6 +135,8 @@
 
         <!-- DASHBOARD CONTENT -->
         <div id="dashboardSection" class="hidden space-y-5 sm:space-y-8">
+            
+            <!-- Metrics Grid -->
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
                 <div class="glass-card p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-goldAccent/30 flex items-center justify-between">
                     <div>
@@ -195,8 +179,10 @@
                 </div>
             </div>
 
-            <!-- Controls -->
+            <!-- Filter Controls, Search & Biometrics Register -->
             <div class="glass-card p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-goldAccent/30 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4">
+                
+                <!-- Unit Filters -->
                 <div class="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
                     <span class="text-[11px] sm:text-xs font-bold text-emeraldDeep uppercase tracking-wider whitespace-nowrap mr-1">Unit:</span>
                     <button class="unit-filter-btn px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-xs font-bold transition-all bg-emeraldDeep text-white whitespace-nowrap" data-unit="All">All Units</button>
@@ -205,31 +191,31 @@
                     <button class="unit-filter-btn px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-xs font-bold transition-all bg-white border border-goldAccent/40 text-darkText whitespace-nowrap" data-unit="Thurayur">Thurayur</button>
                 </div>
 
+                <!-- Search Input, Refresh & Setup Fingerprint -->
                 <div class="flex items-center gap-2 w-full md:w-auto">
-                    <div class="relative flex-grow md:w-56">
+                    <div class="relative flex-grow md:w-64">
                         <input type="text" id="searchInput" placeholder="Search name or mobile..."
                                class="w-full pl-9 pr-3 py-2 rounded-lg sm:rounded-xl bg-white border border-goldAccent/30 text-xs font-medium focus:outline-none focus:border-emeraldDeep">
                         <i data-lucide="search" class="w-4 h-4 text-subText absolute left-3 top-1/2 -translate-y-1/2"></i>
                     </div>
 
-                    <button id="setupFaceBtn" title="Register AI Face ID" class="px-3 py-2 bg-emeraldDeep/10 hover:bg-emeraldDeep/20 border border-emeraldDeep/30 text-emeraldDeep rounded-lg sm:rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 cursor-pointer">
-                        <i data-lucide="scan-face" class="w-4 h-4 text-emeraldDeep"></i>
-                        <span class="hidden sm:inline">Set Face ID</span>
-                    </button>
-
-                    <button id="setupFingerprintBtn" title="Register Fingerprint" class="px-3 py-2 bg-goldAccent text-emeraldDark rounded-lg sm:rounded-xl hover:bg-yellow-500 font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 cursor-pointer">
+                    <!-- Register Fingerprint Button -->
+                    <button id="registerBioBtn" title="Register Fingerprint on this Device" class="px-3 py-2 bg-goldAccent text-emeraldDark rounded-lg sm:rounded-xl hover:bg-yellow-500 font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 active:scale-95 shadow-sm cursor-pointer">
                         <i data-lucide="fingerprint" class="w-4 h-4"></i>
-                        <span class="hidden sm:inline">Set Fingerprint</span>
+                        <span class="hidden sm:inline">Setup Fingerprint</span>
                     </button>
 
                     <button id="refreshBtn" title="Refresh Data" class="p-2 bg-emeraldDeep text-white rounded-lg sm:rounded-xl hover:bg-emeraldDark transition-all shrink-0 active:scale-95">
                         <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                     </button>
                 </div>
+
             </div>
 
-            <!-- Table Section -->
+            <!-- Members Data Table / Mobile Card View -->
             <div class="glass-card rounded-xl sm:rounded-2xl border border-goldAccent/30 overflow-hidden shadow-md">
+                
+                <!-- Desktop Table View -->
                 <div class="hidden md:block overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
@@ -245,113 +231,46 @@
                     </table>
                 </div>
 
+                <!-- Mobile Card List View -->
                 <div id="mobileCardList" class="block md:hidden divide-y divide-goldAccent/15 p-2"></div>
 
+                <!-- Empty State -->
                 <div id="emptyState" class="hidden p-8 sm:p-12 text-center">
                     <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-emeraldDeep/10 text-emeraldDeep flex items-center justify-center mx-auto mb-2">
                         <i data-lucide="inbox" class="w-5 h-5 sm:w-6 sm:h-6"></i>
                     </div>
                     <p class="text-emeraldDeep font-semibold text-sm sm:text-base">No registered members found</p>
+                    <p class="text-xs text-subText mt-1">Try changing unit filter or search query</p>
                 </div>
             </div>
+
         </div>
+
     </main>
-
-    <!-- Camera Modal -->
-    <div id="cameraModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[100] hidden flex flex-col items-center justify-center p-4">
-        <div class="bg-white rounded-2xl p-5 max-w-sm w-full text-center space-y-4 border border-goldAccent/40 shadow-2xl relative">
-            <h3 id="cameraModalTitle" class="font-serif font-bold text-lg text-emeraldDeep">AI Face Scan</h3>
-            <p id="cameraModalDesc" class="text-xs text-subText">Keep face inside the frame</p>
-            
-            <div class="relative w-full aspect-square bg-black rounded-xl overflow-hidden border-2 border-goldAccent flex items-center justify-center">
-                <video id="webcamVideo" autoplay playsinline class="w-full h-full object-cover transform -scale-x-100"></video>
-                <div id="scanRing" class="absolute inset-0 border-4 border-goldAccent rounded-full m-6 pointer-events-none transition-all duration-300 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]"></div>
-            </div>
-
-            <!-- Progress Bar -->
-            <div id="progressContainer" class="space-y-1.5 hidden">
-                <div class="flex justify-between text-xs font-bold text-emeraldDeep">
-                    <span id="instructionText">Look Straight</span>
-                    <span id="progressText">0%</span>
-                </div>
-                <div class="w-full bg-gray-200 h-3 rounded-full overflow-hidden p-0.5 border border-goldAccent/30">
-                    <div id="progressBar" class="bg-goldAccent h-full w-0 rounded-full transition-all duration-200"></div>
-                </div>
-            </div>
-
-            <div id="scanStatusText" class="text-xs font-bold text-emeraldDeep flex items-center justify-center gap-2">
-                <div id="pingDot" class="w-2 h-2 rounded-full bg-emeraldDeep animate-ping"></div>
-                <span id="scanStatusLabel">Initializing AI Models...</span>
-            </div>
-
-            <div class="grid grid-cols-1 gap-2 pt-1">
-                <button id="nextStepBtn" class="hidden w-full py-3 bg-emeraldDeep text-white font-bold rounded-xl text-sm shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
-                    <span>Save & Continue</span>
-                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                </button>
-
-                <button id="closeCameraBtn" class="w-full py-2.5 bg-gray-200 text-gray-700 font-semibold rounded-xl text-xs active:scale-95 transition-all">
-                    Cancel
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Success Modal Popup -->
-    <div id="successModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl p-6 max-w-xs w-full text-center space-y-4 border border-goldAccent/40 shadow-2xl">
-            <div class="w-12 h-12 rounded-full bg-emerald-100 text-emeraldDeep flex items-center justify-center mx-auto">
-                <i data-lucide="check-circle" class="w-8 h-8"></i>
-            </div>
-            <h3 id="successTitle" class="font-bold text-lg text-emeraldDeep">Success!</h3>
-            <p id="successMessage" class="text-xs text-subText">Action completed successfully.</p>
-            <button id="closeSuccessBtn" class="w-full py-2.5 bg-emeraldDeep text-white font-bold rounded-xl text-xs active:scale-95 transition-all">
-                OK
-            </button>
-        </div>
-    </div>
 
     <!-- Footer -->
     <footer class="py-12 border-t border-goldAccent/20 bg-creamBg">
         <div class="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
             <div class="flex items-center gap-3">
                 <img src="7001.png" alt="Halawa Logo" class="h-8 w-auto">
+                <span class="font-serif font-bold text-lg text-emeraldDeep tracking-wider"></span>
             </div>
-            <div class="text-xs text-subText/70">&copy; 2026 Halawa. All Rights Reserved.</div>
+            <div class="text-xs text-subText/70">
+                &copy; 2026 Halawa. All Rights Reserved.
+            </div>
         </div>
     </footer>
 
-    <!-- JavaScript Engine -->
+    <!-- JavaScript -->
     <script>
         lucide.createIcons();
 
-        // FIREBASE SETUP
-        const firebaseConfig = {
-            apiKey: "AIzaSyCvdJey-Hx0HeAeOj1727dtiiBhM7tjUcM",
-            authDomain: "halawa-admin-fa183.firebaseapp.com",
-            databaseURL: "https://halawa-admin-fa183-default-rtdb.firebaseio.com",
-            projectId: "halawa-admin-fa183",
-            storageBucket: "halawa-admin-fa183.firebasestorage.app",
-            messagingSenderId: "973881173495",
-            appId: "1:973881173495:web:cfce3bea32775eb2233af2"
-        };
-        
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-
+        // Web App Deployment URL
         const scriptURL = 'https://script.google.com/macros/s/AKfycbwji8eSDfoUWXbcLNSAHLjjyNeBM604wkpEqtiIPeHrgFCTNDEoMJSbggBru00-NR-j2Q/exec';
 
         let globalData = [];
         let currentAdminPassword = '';
         let selectedUnitFilter = 'All';
-        let cameraStream = null;
-        let isSetupMode = false;
-        let faceModelsLoaded = false;
-        let scanInterval = null;
-
-        let capturedDescriptors = [];
-        let anglesCompleted = { center: false, left: false, right: false, up: false, down: false };
-        let preloadedCloudBiometrics = null;
 
         const loginSection = document.getElementById('loginSection');
         const dashboardSection = document.getElementById('dashboardSection');
@@ -366,53 +285,33 @@
         const searchInput = document.getElementById('searchInput');
         const refreshBtn = document.getElementById('refreshBtn');
 
-        const faceIdBtn = document.getElementById('faceIdBtn');
-        const fingerprintBtn = document.getElementById('fingerprintBtn');
-        const setupFaceBtn = document.getElementById('setupFaceBtn');
-        const setupFingerprintBtn = document.getElementById('setupFingerprintBtn');
+        // Biometric DOM Elements
+        const biometricBtn = document.getElementById('biometricBtn');
+        const registerBioBtn = document.getElementById('registerBioBtn');
 
-        const cameraModal = document.getElementById('cameraModal');
-        const webcamVideo = document.getElementById('webcamVideo');
-        const scanRing = document.getElementById('scanRing');
-        const closeCameraBtn = document.getElementById('closeCameraBtn');
-        const nextStepBtn = document.getElementById('nextStepBtn');
-        const scanStatusLabel = document.getElementById('scanStatusLabel');
-        const progressContainer = document.getElementById('progressContainer');
-        const progressBar = document.getElementById('progressBar');
-        const progressText = document.getElementById('progressText');
-        const instructionText = document.getElementById('instructionText');
-
-        const successModal = document.getElementById('successModal');
-        const successMessage = document.getElementById('successMessage');
-        const closeSuccessBtn = document.getElementById('closeSuccessBtn');
-
-        function showSuccessAlert(msg) {
-            successMessage.innerText = msg;
-            successModal.classList.remove('hidden');
+        // Helper: Check WebAuthn Availability
+        function checkBiometricSupport() {
+            if (!window.PublicKeyCredential) {
+                return false;
+            }
+            return true;
         }
 
-        closeSuccessBtn.addEventListener('click', () => {
-            successModal.classList.add('hidden');
-        });
-
-        // Robust Base64 Helpers for WebAuthn Buffers
+        // Buffer Utilities
         function bufferToBase64(buffer) {
-            const bytes = new Uint8Array(buffer);
-            let binary = '';
-            for (let i = 0; i < bytes.byteLength; i++) { binary += String.fromCharCode(bytes[i]); }
-            return window.btoa(binary);
+            return btoa(String.fromCharCode(...new Uint8Array(buffer)));
         }
 
         function base64ToBuffer(base64) {
-            const binary_string = window.atob(base64);
-            const len = binary_string.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) { bytes[i] = binary_string.charCodeAt(i); }
-            return bytes;
+            return Uint8Array.from(atob(base64), c => c.charCodeAt(0)).buffer;
         }
 
+        // Check Session Persistence
         const savedPass = sessionStorage.getItem('halawa_admin_pass');
-        if (savedPass) { currentAdminPassword = savedPass; fetchDashboardData(); }
+        if (savedPass) {
+            currentAdminPassword = savedPass;
+            fetchDashboardData();
+        }
 
         loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -426,348 +325,153 @@
             fetchDashboardData();
         });
 
-        logoutBtn.addEventListener('click', () => { sessionStorage.removeItem('halawa_admin_pass'); location.reload(); });
-        refreshBtn.addEventListener('click', () => { refreshBtn.classList.add('animate-spin'); fetchDashboardData(() => refreshBtn.classList.remove('animate-spin')); });
+        logoutBtn.addEventListener('click', function() {
+            sessionStorage.removeItem('halawa_admin_pass');
+            location.reload();
+        });
 
-        async function loadFaceApiModels() {
-            if (faceModelsLoaded) return true;
-            try {
-                scanStatusLabel.innerText = "Loading AI Models...";
-                const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
-                
-                await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-                await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-                
-                faceModelsLoaded = true;
-                return true;
-            } catch (err) {
-                console.error("AI Model Load Error:", err);
-                scanStatusLabel.innerText = "❌ Failed to load AI models.";
-                return false;
-            }
-        }
-
-        async function openCamera(setup = false) {
-            isSetupMode = setup;
-            nextStepBtn.classList.add('hidden');
-            nextStepBtn.disabled = false;
-            nextStepBtn.innerHTML = '<span>Save & Continue</span><i data-lucide="arrow-right" class="w-4 h-4"></i>';
-            progressContainer.classList.toggle('hidden', !setup);
-            if (setup) resetEnrollmentProgress();
-
-            cameraModal.classList.remove('hidden');
-
-            try {
-                if (!setup) {
-                    db.ref('admin_biometrics/face_id').once('value').then(snap => {
-                        preloadedCloudBiometrics = snap.val();
-                    });
-                }
-
-                cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 320, height: 320 } });
-                webcamVideo.srcObject = cameraStream;
-
-                const loaded = await loadFaceApiModels();
-                if (!loaded) return;
-
-                if (isSetupMode) startAiEnrollmentProcess();
-                else startAiVerificationProcess();
-
-            } catch (err) {
-                alert('❌ Unable to access camera. Check browser permissions.');
-                stopCamera();
-            }
-        }
-
-        function stopCamera() {
-            if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
-            if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
-            cameraModal.classList.add('hidden');
-            scanRing.classList.remove('scan-ring-active');
-            nextStepBtn.classList.add('hidden');
-        }
-
-        closeCameraBtn.addEventListener('click', stopCamera);
-
-        function resetEnrollmentProgress() {
-            capturedDescriptors = [];
-            anglesCompleted = { center: false, left: false, right: false, up: false, down: false };
-            updateProgressUI();
-        }
-
-        function updateProgressUI() {
-            const count = Object.values(anglesCompleted).filter(Boolean).length;
-            const percent = Math.min(100, count * 20);
-            progressBar.style.width = `${percent}%`;
-            progressText.innerText = `${percent}%`;
-
-            if (!anglesCompleted.center) instructionText.innerText = "Look Straight";
-            else if (!anglesCompleted.left) instructionText.innerText = "Turn Head Left";
-            else if (!anglesCompleted.right) instructionText.innerText = "Turn Head Right";
-            else if (!anglesCompleted.up) instructionText.innerText = "Tilt Head Up";
-            else if (!anglesCompleted.down) instructionText.innerText = "Tilt Head Down";
-            else instructionText.innerText = "✅ Scan Complete!";
-        }
-
-        function startAiEnrollmentProcess() {
-            scanStatusLabel.innerText = "Align face in frame...";
-
-            scanInterval = setInterval(async () => {
-                if (!webcamVideo.videoWidth) return;
-
-                const detection = await faceapi.detectSingleFace(webcamVideo, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 }))
-                    .withFaceLandmarks()
-                    .withFaceDescriptor();
-
-                if (!detection) {
-                    scanRing.classList.remove('scan-ring-active');
-                    scanStatusLabel.innerText = "Searching face...";
-                    return;
-                }
-
-                scanRing.classList.add('scan-ring-active');
-                scanStatusLabel.innerText = "Scanning features...";
-
-                const landmarks = detection.landmarks;
-                const nose = landmarks.getNose()[0];
-                const jaw = landmarks.getJawOutline();
-                const faceWidth = jaw[16].x - jaw[0].x;
-                const noseRelX = (nose.x - jaw[0].x) / faceWidth;
-
-                const descriptorArray = Array.from(detection.descriptor);
-
-                if (!anglesCompleted.center && noseRelX >= 0.4 && noseRelX <= 0.6) {
-                    anglesCompleted.center = true; capturedDescriptors.push(descriptorArray);
-                } else if (!anglesCompleted.left && noseRelX < 0.38) {
-                    anglesCompleted.left = true; capturedDescriptors.push(descriptorArray);
-                } else if (!anglesCompleted.right && noseRelX > 0.62) {
-                    anglesCompleted.right = true; capturedDescriptors.push(descriptorArray);
-                } else if (!anglesCompleted.up && nose.y < landmarks.getLeftEye()[0].y - 5) {
-                    anglesCompleted.up = true; capturedDescriptors.push(descriptorArray);
-                } else if (!anglesCompleted.down && nose.y > landmarks.getMouth()[0].y - 25) {
-                    anglesCompleted.down = true; capturedDescriptors.push(descriptorArray);
-                }
-
-                updateProgressUI();
-
-                if (Object.values(anglesCompleted).every(Boolean)) {
-                    clearInterval(scanInterval); scanInterval = null;
-                    scanStatusLabel.innerText = "🎉 100% Scan Complete! Click Save below.";
-                    nextStepBtn.classList.remove('hidden');
-                    lucide.createIcons();
-                }
-            }, 80);
-        }
-
-        nextStepBtn.addEventListener('click', function() {
-            nextStepBtn.disabled = true;
-            nextStepBtn.innerText = "Saving to Firebase...";
-            scanStatusLabel.innerText = "Connecting to Cloud Database...";
-
-            db.ref('admin_biometrics/face_id').set({
-                descriptors: capturedDescriptors,
-                password: currentAdminPassword,
-                updatedAt: new Date().toISOString()
-            }).then(() => {
-                scanStatusLabel.innerText = "✅ Face ID Successfully Saved!";
-                stopCamera();
-                showSuccessAlert("Face ID Biometrics successfully registered and saved!");
-            }).catch(err => {
-                console.error("Firebase Error:", err);
-                nextStepBtn.disabled = false;
-                nextStepBtn.innerText = "Retry Saving";
-                scanStatusLabel.innerText = "❌ Firebase Error: " + err.message;
-                alert("❌ Firebase Error: " + err.message);
+        refreshBtn.addEventListener('click', function() {
+            refreshBtn.classList.add('animate-spin');
+            fetchDashboardData(() => {
+                refreshBtn.classList.remove('animate-spin');
             });
         });
 
-        async function startAiVerificationProcess() {
-            scanStatusLabel.innerText = "Scanning face...";
-
-            let data = preloadedCloudBiometrics;
-            if (!data) {
-                try {
-                    const snapshot = await db.ref('admin_biometrics/face_id').once('value');
-                    data = snapshot.val();
-                } catch(e) {
-                    console.error("Fetch Error", e);
-                }
-            }
-
-            if (!data || !data.descriptors) {
-                stopCamera();
-                loginError.innerText = '❌ No Face ID registered in Cloud. Login with password and register Face ID first.';
-                loginError.classList.remove('hidden');
-                return;
-            }
-
-            const savedDescriptorsList = data.descriptors;
-            const savedPass = data.password;
-
-            scanInterval = setInterval(async () => {
-                if (!webcamVideo.videoWidth) return;
-
-                const detection = await faceapi.detectSingleFace(webcamVideo, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 }))
-                    .withFaceLandmarks()
-                    .withFaceDescriptor();
-
-                if (!detection) {
-                    scanRing.classList.remove('scan-ring-active');
-                    scanStatusLabel.innerText = "Position face in ring...";
+        // 1. Biometric Registration (Inside Dashboard)
+        if (registerBioBtn) {
+            registerBioBtn.addEventListener('click', async () => {
+                if (!checkBiometricSupport()) {
+                    alert('❌ Biometric login is not supported in this browser or iframe. Please host your site on HTTPS (like Netlify or Vercel) and open directly in a browser.');
                     return;
                 }
 
-                scanRing.classList.add('scan-ring-active');
-                scanStatusLabel.innerText = "Verifying Identity...";
+                try {
+                    const challenge = new Uint8Array(32);
+                    window.crypto.getRandomValues(challenge);
 
-                const liveDescriptor = detection.descriptor;
-                let minDistance = 1.0;
+                    const credential = await navigator.credentials.create({
+                        publicKey: {
+                            challenge: challenge,
+                            rp: { name: "Halawa Admin Portal" },
+                            user: {
+                                id: new Uint8Array([1, 2, 3, 4]),
+                                name: "admin@halawa.com",
+                                displayName: "Admin"
+                            },
+                            pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+                            authenticatorSelection: { userVerification: "preferred" },
+                            timeout: 60000
+                        }
+                    });
 
-                for (let savedDesc of savedDescriptorsList) {
-                    const dist = faceapi.euclideanDistance(liveDescriptor, new Float32Array(savedDesc));
-                    if (dist < minDistance) minDistance = dist;
+                    if (credential) {
+                        const credId = bufferToBase64(credential.rawId);
+                        localStorage.setItem('halawa_bio_cred_id', credId);
+                        localStorage.setItem('halawa_bio_saved_pass', currentAdminPassword);
+                        alert('✅ Fingerprint setup completed successfully! You can now login with fingerprint next time.');
+                    }
+                } catch (err) {
+                    console.error('Biometric Setup Error:', err);
+                    alert('❌ Fingerprint setup failed/cancelled. (Note: WebAuthn requires HTTPS connection or local domain).');
                 }
-
-                if (minDistance <= 0.52) {
-                    scanStatusLabel.innerText = "✅ Face Verified! Logging in...";
-                    clearInterval(scanInterval); scanInterval = null;
-
-                    setTimeout(() => {
-                        stopCamera();
-                        currentAdminPassword = savedPass;
-                        fetchDashboardData();
-                    }, 200);
-                }
-            }, 60);
+            });
         }
 
-        faceIdBtn.addEventListener('click', () => openCamera(false));
-        setupFaceBtn.addEventListener('click', () => openCamera(true));
-
-        // SETUP FINGERPRINT (WITH POPUP ALERT)
-        setupFingerprintBtn.addEventListener('click', async () => {
-            if (!window.PublicKeyCredential) {
-                alert('❌ Biometric Fingerprint / Passkey is not supported on this browser or device.');
-                return;
-            }
-
-            try {
-                const challenge = new Uint8Array(32); 
-                window.crypto.getRandomValues(challenge);
-                const userId = new TextEncoder().encode("admin_halawa_user_" + Date.now());
-
-                const credential = await navigator.credentials.create({
-                    publicKey: {
-                        challenge: challenge,
-                        rp: { name: "Halawa Admin Dashboard" },
-                        user: {
-                            id: userId,
-                            name: "admin@halawa.com",
-                            displayName: "Halawa Admin"
-                        },
-                        pubKeyCredParams: [
-                            { alg: -7, type: "public-key" },
-                            { alg: -257, type: "public-key" }
-                        ],
-                        authenticatorSelection: {
-                            userVerification: "preferred"
-                        },
-                        timeout: 60000
-                    }
-                });
-
-                if (credential) {
-                    const credId = bufferToBase64(credential.rawId);
-                    await db.ref('admin_biometrics/fingerprint').set({ 
-                        credId: credId, 
-                        password: currentAdminPassword,
-                        updatedAt: new Date().toISOString()
-                    });
-                    showSuccessAlert("Fingerprint Biometrics successfully registered and saved to Cloud!");
-                }
-            } catch (err) { 
-                console.error("Fingerprint Setup Error:", err);
-                alert('❌ Fingerprint Setup Failed: ' + (err.message || 'Registration Cancelled')); 
-            }
-        });
-
-        // FINGERPRINT LOGIN (DIRECT BROWSER NATIVE TRIGGER)
-        fingerprintBtn.addEventListener('click', async () => {
-            loginError.classList.add('hidden');
-            
-            if (!window.PublicKeyCredential) {
-                loginError.innerText = '❌ Biometric Fingerprint is not supported on this browser or device.';
-                loginError.classList.remove('hidden');
-                return;
-            }
-
-            try {
-                const snapshot = await db.ref('admin_biometrics/fingerprint').once('value');
-                const data = snapshot.val();
-
-                if (!data || !data.credId) {
-                    loginError.innerText = '❌ No Fingerprint registered in Cloud! First login with Password and click "Set Fingerprint".';
-                    loginError.classList.remove('hidden'); 
+        // 2. Biometric Login Trigger
+        if (biometricBtn) {
+            biometricBtn.addEventListener('click', async () => {
+                if (!checkBiometricSupport()) {
+                    loginError.innerText = '❌ Fingerprint sensor is restricted in preview mode. Deploy to HTTPS (Netlify/Vercel) to use this.';
+                    loginError.classList.remove('hidden');
                     return;
                 }
 
-                const challenge = new Uint8Array(32); 
-                window.crypto.getRandomValues(challenge);
-                const rawCredId = base64ToBuffer(data.credId);
+                const savedCredId = localStorage.getItem('halawa_bio_cred_id');
+                const savedPass = localStorage.getItem('halawa_bio_saved_pass');
 
-                // Triggers OS System Biometric Authenticator Directly
-                const assertion = await navigator.credentials.get({
-                    publicKey: {
-                        challenge: challenge,
-                        allowCredentials: [{ 
-                            id: rawCredId, 
-                            type: 'public-key' 
-                        }],
-                        userVerification: "preferred",
-                        timeout: 60000
-                    }
-                });
-
-                if (assertion) { 
-                    currentAdminPassword = data.password; 
-                    fetchDashboardData(); 
+                if (!savedCredId || !savedPass) {
+                    loginError.innerText = '❌ No fingerprint saved on this device. Login with password first and click "Setup Fingerprint".';
+                    loginError.classList.remove('hidden');
+                    return;
                 }
-            } catch (err) { 
-                console.error("Fingerprint Verify Error:", err);
-                loginError.innerText = '❌ Fingerprint Failed: ' + (err.message || 'Verification Cancelled'); 
-                loginError.classList.remove('hidden'); 
-            }
-        });
+
+                try {
+                    loginError.classList.add('hidden');
+                    const challenge = new Uint8Array(32);
+                    window.crypto.getRandomValues(challenge);
+
+                    const assertion = await navigator.credentials.get({
+                        publicKey: {
+                            challenge: challenge,
+                            allowCredentials: [{
+                                id: base64ToBuffer(savedCredId),
+                                type: 'public-key'
+                            }],
+                            userVerification: "preferred",
+                            timeout: 60000
+                        }
+                    });
+
+                    if (assertion) {
+                        currentAdminPassword = savedPass;
+                        fetchDashboardData();
+                    }
+                } catch (err) {
+                    console.error('Biometric Login Error:', err);
+                    loginError.innerText = '❌ Fingerprint verification failed or was canceled.';
+                    loginError.classList.remove('hidden');
+                }
+            });
+        }
 
         function fetchDashboardData(callback) {
-            loginBtn.disabled = true; 
-            loginBtn.innerHTML = '<span>Verifying...</span>'; 
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span>Verifying...</span>';
             loginError.classList.add('hidden');
 
-            fetch(`${scriptURL}?action=getData&password=${encodeURIComponent(currentAdminPassword)}`, { method: 'GET', redirect: 'follow' })
-            .then(res => res.json())
+            const fetchUrl = `${scriptURL}?action=getData&password=${encodeURIComponent(currentAdminPassword)}`;
+
+            fetch(fetchUrl, {
+                method: 'GET',
+                redirect: 'follow'
+            })
+            .then(res => {
+                return res.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        throw new Error('Script returned non-JSON response. Please check Google Apps Script deployment (Who has access: Anyone).');
+                    }
+                });
+            })
             .then(data => {
                 if (data.result === 'success') {
                     sessionStorage.setItem('halawa_admin_pass', currentAdminPassword);
-                    loginSection.classList.add('hidden'); 
-                    dashboardSection.classList.remove('hidden'); 
+                    loginSection.classList.add('hidden');
+                    dashboardSection.classList.remove('hidden');
                     logoutBtn.classList.remove('hidden');
-                    globalData = data.data || []; 
-                    updateMetrics(); 
+
+                    globalData = data.data || [];
+                    updateMetrics();
                     renderData();
+                } else if (data.result === 'unauthorized') {
+                    loginError.innerText = '❌ Incorrect Password!';
+                    loginError.classList.remove('hidden');
+                    sessionStorage.removeItem('halawa_admin_pass');
                 } else {
-                    loginError.innerText = '❌ Incorrect Password or Auth Error'; 
+                    loginError.innerText = `❌ Error: ${data.message || data.error || 'Failed to fetch data'}`;
                     loginError.classList.remove('hidden');
                 }
-            }).catch(err => { 
-                loginError.innerText = '❌ Connection Error'; 
-                loginError.classList.remove('hidden'); 
+            })
+            .catch(err => {
+                console.error(err);
+                loginError.innerText = `❌ ${err.message || 'Connection Error. Please verify Web App URL.'}`;
+                loginError.classList.remove('hidden');
             })
             .finally(() => {
-                loginBtn.disabled = false; 
+                loginBtn.disabled = false;
                 loginBtn.innerHTML = '<span>Access Dashboard</span><i data-lucide="arrow-right" class="w-4 h-4 sm:w-5 sm:h-5"></i>';
-                lucide.createIcons(); 
+                lucide.createIcons();
                 if (callback) callback();
             });
         }
@@ -779,15 +483,17 @@
             document.getElementById('statThurayur').innerText = globalData.filter(d => (d.unit || '').toString().trim().toLowerCase() === 'thurayur').length;
         }
 
+        // Unit Filter Buttons
         document.querySelectorAll('.unit-filter-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.unit-filter-btn').forEach(b => {
-                    b.classList.remove('bg-emeraldDeep', 'text-white'); 
+                    b.classList.remove('bg-emeraldDeep', 'text-white');
                     b.classList.add('bg-white', 'border', 'border-goldAccent/40', 'text-darkText');
                 });
-                this.classList.remove('bg-white', 'border', 'border-goldAccent/40', 'text-darkText'); 
+                this.classList.remove('bg-white', 'border', 'border-goldAccent/40', 'text-darkText');
                 this.classList.add('bg-emeraldDeep', 'text-white');
-                selectedUnitFilter = this.getAttribute('data-unit'); 
+
+                selectedUnitFilter = this.getAttribute('data-unit');
                 renderData();
             });
         });
@@ -802,20 +508,25 @@
 
         function renderData() {
             const searchTerm = searchInput.value.toLowerCase().trim();
+
             const filtered = globalData.filter(item => {
                 const itemUnit = (item.unit || '').toString().trim().toLowerCase();
                 const matchesUnit = (selectedUnitFilter === 'All') || (itemUnit === selectedUnitFilter.toLowerCase());
-                const matchesSearch = (item.name || '').toString().toLowerCase().includes(searchTerm) || (item.mobile || '').toString().includes(searchTerm);
+                
+                const matchesSearch = (item.name || '').toString().toLowerCase().includes(searchTerm) || 
+                                      (item.mobile || '').toString().includes(searchTerm);
+                                      
                 return matchesUnit && matchesSearch;
             });
 
-            tableBodyDesktop.innerHTML = ''; 
+            tableBodyDesktop.innerHTML = '';
             mobileCardList.innerHTML = '';
 
-            if (filtered.length === 0) { 
-                emptyState.classList.remove('hidden'); 
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
             } else {
                 emptyState.classList.add('hidden');
+                
                 filtered.forEach((row, index) => {
                     const formattedDate = formatDate(row.timestamp);
                     const name = escapeHtml((row.name || '').toString());
@@ -824,22 +535,28 @@
                     const cleanPhone = rawMobile.replace(/[^\d+]/g, '');
                     const unit = escapeHtml((row.unit || '').toString());
                     
+                    // Desktop Table Row
                     const tr = document.createElement('tr');
                     tr.className = 'hover:bg-goldAccent/5 transition-colors';
                     tr.innerHTML = `
                         <td class="py-3 px-5 font-bold text-emeraldDeep">${index + 1}</td>
                         <td class="py-3 px-5 font-semibold text-darkText">${name}</td>
                         <td class="py-3 px-5 font-mono text-xs">
-                            <a href="tel:${cleanPhone}" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emeraldDeep/10 text-emeraldDeep hover:bg-emeraldDeep hover:text-white transition-all font-semibold active:scale-95">
+                            <a href="tel:${cleanPhone}" title="Click to call ${mobile}" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emeraldDeep/10 text-emeraldDeep hover:bg-emeraldDeep hover:text-white transition-all font-semibold active:scale-95">
                                 <i data-lucide="phone-call" class="w-3.5 h-3.5 text-goldAccent"></i>
                                 <span>${mobile}</span>
                             </a>
                         </td>
-                        <td class="py-3 px-5"><span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-goldAccent/20 text-emeraldDark border border-goldAccent/30">${unit}</span></td>
+                        <td class="py-3 px-5">
+                            <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold bg-goldAccent/20 text-emeraldDark border border-goldAccent/30">
+                                ${unit}
+                            </span>
+                        </td>
                         <td class="py-3 px-5 text-xs text-subText">${formattedDate}</td>
                     `;
                     tableBodyDesktop.appendChild(tr);
 
+                    // Mobile Card View
                     const card = document.createElement('div');
                     card.className = 'p-3.5 space-y-2.5';
                     card.innerHTML = `
@@ -848,7 +565,9 @@
                                 <span class="w-5 h-5 rounded-full bg-emeraldDeep/10 text-emeraldDeep text-xs font-bold flex items-center justify-center">${index + 1}</span>
                                 <span class="font-bold text-sm text-darkText">${name}</span>
                             </div>
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-goldAccent/20 text-emeraldDark border border-goldAccent/30">${unit}</span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-goldAccent/20 text-emeraldDark border border-goldAccent/30">
+                                ${unit}
+                            </span>
                         </div>
                         <div class="flex items-center justify-between text-xs text-subText pt-1 border-t border-goldAccent/10">
                             <a href="tel:${cleanPhone}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emeraldDeep text-white font-mono text-xs font-bold shadow-sm active:scale-95 transition-all">
@@ -860,11 +579,15 @@
                     `;
                     mobileCardList.appendChild(card);
                 });
+                
                 lucide.createIcons();
             }
         }
 
-        function escapeHtml(str) { return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
     </script>
 </body>
 </html>
+
