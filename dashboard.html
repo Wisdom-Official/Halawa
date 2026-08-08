@@ -104,7 +104,7 @@
                     <i data-lucide="lock" class="w-7 h-7 sm:w-8 sm:h-8"></i>
                 </div>
                 <h2 class="text-xl sm:text-2xl font-serif font-bold text-white mb-1.5">Admin Portal</h2>
-                <p class="text-goldLight/80 text-xs sm:text-sm mb-6">Enter password or use fingerprint to view members</p>
+                <p class="text-goldLight/80 text-xs sm:text-sm mb-6">Enter password or use Biometrics / Face ID</p>
 
                 <form id="loginForm" class="space-y-4">
                     <div>
@@ -116,7 +116,7 @@
                         <i data-lucide="arrow-right" class="w-4 h-4 sm:w-5 sm:h-5"></i>
                     </button>
 
-                    <!-- Fingerprint Login Option -->
+                    <!-- Biometric / Face ID Login Option -->
                     <div id="biometricDivider" class="relative flex py-1 items-center">
                         <div class="flex-grow border-t border-white/20"></div>
                         <span class="flex-shrink mx-3 text-white/50 text-xs font-semibold">OR</span>
@@ -124,8 +124,8 @@
                     </div>
 
                     <button type="button" id="biometricBtn" class="w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 border border-goldAccent/40 text-goldLight font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer">
-                        <i data-lucide="fingerprint" class="w-5 h-5 text-goldAccent"></i>
-                        <span>Login with Fingerprint</span>
+                        <i data-lucide="scan-face" class="w-5 h-5 text-goldAccent"></i>
+                        <span>Login with Face ID / Biometrics</span>
                     </button>
                 </form>
 
@@ -191,7 +191,7 @@
                     <button class="unit-filter-btn px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-xs font-bold transition-all bg-white border border-goldAccent/40 text-darkText whitespace-nowrap" data-unit="Thurayur">Thurayur</button>
                 </div>
 
-                <!-- Search Input, Refresh & Setup Fingerprint -->
+                <!-- Search Input, Refresh & Setup Face ID / Fingerprint -->
                 <div class="flex items-center gap-2 w-full md:w-auto">
                     <div class="relative flex-grow md:w-64">
                         <input type="text" id="searchInput" placeholder="Search name or mobile..."
@@ -199,10 +199,10 @@
                         <i data-lucide="search" class="w-4 h-4 text-subText absolute left-3 top-1/2 -translate-y-1/2"></i>
                     </div>
 
-                    <!-- Register Fingerprint Button -->
-                    <button id="registerBioBtn" title="Register Fingerprint on this Device" class="px-3 py-2 bg-goldAccent text-emeraldDark rounded-lg sm:rounded-xl hover:bg-yellow-500 font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 active:scale-95 shadow-sm cursor-pointer">
-                        <i data-lucide="fingerprint" class="w-4 h-4"></i>
-                        <span class="hidden sm:inline">Setup Fingerprint</span>
+                    <!-- Setup Face ID / Fingerprint Button -->
+                    <button id="registerBioBtn" title="Register Face ID or Fingerprint on this Device" class="px-3 py-2 bg-goldAccent text-emeraldDark rounded-lg sm:rounded-xl hover:bg-yellow-500 font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 active:scale-95 shadow-sm cursor-pointer">
+                        <i data-lucide="scan-face" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Setup Face ID / Fingerprint</span>
                     </button>
 
                     <button id="refreshBtn" title="Refresh Data" class="p-2 bg-emeraldDeep text-white rounded-lg sm:rounded-xl hover:bg-emeraldDark transition-all shrink-0 active:scale-95">
@@ -291,10 +291,7 @@
 
         // Helper: Check WebAuthn Availability
         function checkBiometricSupport() {
-            if (!window.PublicKeyCredential) {
-                return false;
-            }
-            return true;
+            return !!window.PublicKeyCredential;
         }
 
         // Buffer Utilities
@@ -337,11 +334,11 @@
             });
         });
 
-        // 1. Biometric Registration (Inside Dashboard)
+        // 1. Biometric Registration (Setup Face ID / Fingerprint)
         if (registerBioBtn) {
             registerBioBtn.addEventListener('click', async () => {
                 if (!checkBiometricSupport()) {
-                    alert('❌ Biometric login is not supported in this browser or iframe. Please host your site on HTTPS (like Netlify or Vercel) and open directly in a browser.');
+                    alert('❌ Biometric authentication is restricted or unsupported in this browser/preview mode. Please deploy on HTTPS (Netlify / Vercel) and open directly in Safari/Chrome.');
                     return;
                 }
 
@@ -359,7 +356,10 @@
                                 displayName: "Admin"
                             },
                             pubKeyCredParams: [{ alg: -7, type: "public-key" }],
-                            authenticatorSelection: { userVerification: "preferred" },
+                            authenticatorSelection: { 
+                                userVerification: "preferred",
+                                authenticatorAttachment: "platform"
+                            },
                             timeout: 60000
                         }
                     });
@@ -368,20 +368,20 @@
                         const credId = bufferToBase64(credential.rawId);
                         localStorage.setItem('halawa_bio_cred_id', credId);
                         localStorage.setItem('halawa_bio_saved_pass', currentAdminPassword);
-                        alert('✅ Fingerprint setup completed successfully! You can now login with fingerprint next time.');
+                        alert('✅ Face ID / Biometrics setup completed successfully!');
                     }
                 } catch (err) {
                     console.error('Biometric Setup Error:', err);
-                    alert('❌ Fingerprint setup failed/cancelled. (Note: WebAuthn requires HTTPS connection or local domain).');
+                    alert('❌ Face ID / Biometrics setup failed or was canceled.');
                 }
             });
         }
 
-        // 2. Biometric Login Trigger
+        // 2. Biometric Login Trigger (Face ID / Fingerprint Verification)
         if (biometricBtn) {
             biometricBtn.addEventListener('click', async () => {
                 if (!checkBiometricSupport()) {
-                    loginError.innerText = '❌ Fingerprint sensor is restricted in preview mode. Deploy to HTTPS (Netlify/Vercel) to use this.';
+                    loginError.innerText = '❌ Biometric authentication is restricted in preview mode. Deploy to HTTPS (Netlify/Vercel) to test.';
                     loginError.classList.remove('hidden');
                     return;
                 }
@@ -390,7 +390,7 @@
                 const savedPass = localStorage.getItem('halawa_bio_saved_pass');
 
                 if (!savedCredId || !savedPass) {
-                    loginError.innerText = '❌ No fingerprint saved on this device. Login with password first and click "Setup Fingerprint".';
+                    loginError.innerText = '❌ No Face ID/Fingerprint registered. Login with password first and click "Setup Face ID / Fingerprint".';
                     loginError.classList.remove('hidden');
                     return;
                 }
@@ -418,7 +418,7 @@
                     }
                 } catch (err) {
                     console.error('Biometric Login Error:', err);
-                    loginError.innerText = '❌ Fingerprint verification failed or was canceled.';
+                    loginError.innerText = '❌ Biometric verification failed or was canceled.';
                     loginError.classList.remove('hidden');
                 }
             });
