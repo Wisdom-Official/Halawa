@@ -389,13 +389,13 @@
         });
 
         // =====================================================================
-        // ANGLE & POSE TOLERANT FACE VECTOR EXTRACTION & MATCHING ALGORITHM
+        // LIGHTING-INVARIANT & SOBEL GRADIENT FEATURE EXTRACTION ALGORITHM
         // =====================================================================
 
-        // Multi-resolution facial grid feature extractor with adaptive contrast
-        function extractPoseTolerantVector(canvasContext) {
-            const gridSizes = [16, 24]; // Multi-scale grid to handle rotation & angles
-            const vector = [];
+        // Histogram equalization & Gradient Extraction to neutralize lighting variations
+        function extractLightingInvariantVector(canvasContext) {
+            const gridSizes = [16, 24]; 
+            const finalVector = [];
 
             gridSizes.forEach(size => {
                 const tempCanvas = document.createElement('canvas');
@@ -404,34 +404,70 @@
                 const tempCtx = tempCanvas.getContext('2d');
                 tempCtx.drawImage(faceCanvas, 0, 0, size, size);
 
-                const scaledData = tempCtx.getImageData(0, 0, size, size).data;
-                const localVector = [];
-                let sum = 0;
+                const imgData = tempCtx.getImageData(0, 0, size, size);
+                const data = imgData.data;
+                const grays = new Float32Array(size * size);
 
-                for (let i = 0; i < scaledData.length; i += 4) {
-                    const gray = 0.299 * scaledData[i] + 0.587 * scaledData[i + 1] + 0.114 * scaledData[i + 2];
-                    localVector.push(gray);
-                    sum += gray;
+                // 1. Grayscale Conversion
+                for (let i = 0; i < data.length; i += 4) {
+                    grays[i / 4] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
                 }
 
-                // Mean Centering & Contrast Normalization per grid
-                const mean = sum / localVector.length;
-                let variance = 0;
-                for (let i = 0; i < localVector.length; i++) {
-                    localVector[i] -= mean;
-                    variance += localVector[i] * localVector[i];
+                // 2. Histogram Equalization (Lighting Normalization)
+                const histogram = new Int32Array(256);
+                for (let i = 0; i < grays.length; i++) {
+                    histogram[Math.floor(grays[i])]++;
                 }
-                const stdDev = Math.sqrt(variance / localVector.length) || 1;
 
-                for (let i = 0; i < localVector.length; i++) {
-                    vector.push(localVector[i] / stdDev);
+                const cdf = new Float32Array(256);
+                let cumulative = 0;
+                for (let i = 0; i < 256; i++) {
+                    cumulative += histogram[i];
+                    cdf[i] = cumulative / grays.length;
+                }
+
+                const equalizedGrays = new Float32Array(grays.length);
+                for (let i = 0; i < grays.length; i++) {
+                    equalizedGrays[i] = cdf[Math.floor(grays[i])] * 255;
+                }
+
+                // 3. Sobel Edge & Structure Extraction (Lighting-Invariant Facial Edges)
+                for (let y = 1; y < size - 1; y++) {
+                    for (let x = 1; x < size - 1; x++) {
+                        const idx = y * size + x;
+                        const gx = -equalizedGrays[idx - size - 1] + equalizedGrays[idx - size + 1]
+                                 - 2 * equalizedGrays[idx - 1] + 2 * equalizedGrays[idx + 1]
+                                 - equalizedGrays[idx + size - 1] + equalizedGrays[idx + size + 1];
+
+                        const gy = -equalizedGrays[idx - size - 1] - 2 * equalizedGrays[idx - size] - equalizedGrays[idx - size + 1]
+                                 + equalizedGrays[idx + size - 1] + 2 * equalizedGrays[idx + size] + equalizedGrays[idx + size + 1];
+
+                        const magnitude = Math.sqrt(gx * gx + gy * gy);
+                        finalVector.push(magnitude);
+                    }
                 }
             });
 
-            return vector;
+            // Standard Normalization
+            let sum = 0;
+            for (let i = 0; i < finalVector.length; i++) sum += finalVector[i];
+            const mean = sum / finalVector.length;
+
+            let variance = 0;
+            for (let i = 0; i < finalVector.length; i++) {
+                finalVector[i] -= mean;
+                variance += finalVector[i] * finalVector[i];
+            }
+            const stdDev = Math.sqrt(variance / finalVector.length) || 1;
+
+            for (let i = 0; i < finalVector.length; i++) {
+                finalVector[i] = finalVector[i] / stdDev;
+            }
+
+            return finalVector;
         }
 
-        // Cosine similarity with pose angle tolerance buffer
+        // Cosine similarity comparison
         function calculateSimilarityScore(vecA, vecB) {
             if (!vecA || !vecB || vecA.length !== vecB.length) return 0;
 
@@ -472,7 +508,7 @@
                 cameraModal.classList.remove('hidden');
 
                 if (!setupMode) {
-                    // Start automatic live face scanning loop (Every 400ms)
+                    // Start automatic live face scanning loop
                     startLiveAutoScan();
                 }
             } catch (err) {
@@ -495,7 +531,7 @@
 
         closeCameraBtn.addEventListener('click', stopCamera);
 
-        // AUTO SCAN FACE CONTINUOUS LOOP
+        // AUTO SCAN FACE CONTINUOUS LOOP WITH LIGHTING INVARIANCE
         function startLiveAutoScan() {
             if (autoScanInterval) clearInterval(autoScanInterval);
 
@@ -519,18 +555,18 @@
                 faceCanvas.height = 300;
                 context.drawImage(webcamVideo, 0, 0, 300, 300);
 
-                const currentVector = extractPoseTolerantVector(context);
+                const currentVector = extractLightingInvariantVector(context);
                 const similarityScore = calculateSimilarityScore(savedVector, currentVector);
-                console.log('Auto-Scan Face Score:', similarityScore);
+                console.log('Lighting-Invariant Similarity Score:', similarityScore);
 
-                // Angle-Tolerant High Precision Threshold (>= 0.65 / 65% angle-invariant match)
-                if (similarityScore >= 0.65) {
-                    scanStatusText.innerHTML = 'span class="text-green-600 font-bold">✅ Face Recognized! Opening...</span>';
+                // Adjusted lighting-invariant threshold (>= 0.58 / 58% structural edge match)
+                if (similarityScore >= 0.58) {
+                    scanStatusText.innerHTML = '<span class="text-green-600 font-bold">✅ Face Recognized! Opening...</span>';
                     stopCamera();
                     currentAdminPassword = savedPass;
                     fetchDashboardData();
                 }
-            }, 400); // Scans 2.5 times per second automatically!
+            }, 350); 
         }
 
         // Face ID Login Button Click
@@ -560,12 +596,12 @@
             faceCanvas.height = 300;
             context.drawImage(webcamVideo, 0, 0, 300, 300);
 
-            const capturedVector = extractPoseTolerantVector(context);
+            const capturedVector = extractLightingInvariantVector(context);
 
             localStorage.setItem('halawa_face_vector', JSON.stringify(capturedVector));
             localStorage.setItem('halawa_face_saved_pass', currentAdminPassword);
             stopCamera();
-            alert('✅ Admin Face ID registered successfully! Face ID will now auto-scan and open without clicking buttons.');
+            alert('✅ Admin Face ID registered successfully! Lighting adjustments will no longer block verification.');
         });
 
         // ==========================================
