@@ -285,7 +285,6 @@
             </div>
 
             <div class="grid grid-cols-1 gap-2 pt-1">
-                <!-- NEXT BUTTON -->
                 <button id="nextStepBtn" class="hidden w-full py-3 bg-emeraldDeep text-white font-bold rounded-xl text-sm shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
                     <span>Save & Continue</span>
                     <i data-lucide="arrow-right" class="w-4 h-4"></i>
@@ -542,13 +541,11 @@
             }, 120);
         }
 
-        // NEXT BUTTON CLICK WITH TIMEOUT & ROBUST ERROR HANDLING
         nextStepBtn.addEventListener('click', function() {
             nextStepBtn.disabled = true;
             nextStepBtn.innerText = "Saving to Firebase...";
             scanStatusLabel.innerText = "Connecting to Cloud Database...";
 
-            // 8 Second Timeout Setup
             let isHandled = false;
             const timeoutTimer = setTimeout(() => {
                 if (!isHandled) {
@@ -663,22 +660,22 @@
         faceIdBtn.addEventListener('click', () => openCamera(false));
         setupFaceBtn.addEventListener('click', () => openCamera(true));
 
+        // IMPROVED BIOMETRIC FINGERPRINT REGISTRATION (SET FINGERPRINT)
         setupFingerprintBtn.addEventListener('click', async () => {
             if (!window.PublicKeyCredential) {
-                alert('❌ Biometric Fingerprint is not supported on this browser/device.');
+                alert('❌ Biometric Fingerprint / Passkey is not supported on this browser or device.');
                 return;
             }
 
             try {
                 const challenge = new Uint8Array(32); 
                 window.crypto.getRandomValues(challenge);
-
-                const userId = new TextEncoder().encode("admin_halawa_user");
+                const userId = new TextEncoder().encode("admin_halawa_user_" + Date.now());
 
                 const credential = await navigator.credentials.create({
                     publicKey: {
                         challenge: challenge,
-                        rp: { name: "Halawa Admin" },
+                        rp: { name: "Halawa Admin Dashboard" },
                         user: {
                             id: userId,
                             name: "admin@halawa.com",
@@ -689,7 +686,6 @@
                             { alg: -257, type: "public-key" }
                         ],
                         authenticatorSelection: {
-                            authenticatorAttachment: "platform",
                             userVerification: "preferred"
                         },
                         timeout: 60000
@@ -703,29 +699,35 @@
                         password: currentAdminPassword,
                         updatedAt: new Date().toISOString()
                     });
-                    alert('✅ Fingerprint saved successfully!');
+                    alert('✅ Fingerprint Biometrics successfully registered and saved to Cloud!');
                 }
             } catch (err) { 
                 console.error("Fingerprint Setup Error:", err);
-                alert('❌ Fingerprint Setup Failed: ' + err.message); 
+                alert('❌ Fingerprint Setup Failed: ' + (err.message || 'Registration Cancelled')); 
             }
         });
 
+        // IMPROVED BIOMETRIC FINGERPRINT LOGIN (VERIFY FINGERPRINT)
         fingerprintBtn.addEventListener('click', async () => {
+            loginError.classList.add('hidden');
+            if (!window.PublicKeyCredential) {
+                loginError.innerText = '❌ Biometric Fingerprint is not supported on this browser.';
+                loginError.classList.remove('hidden');
+                return;
+            }
+
             try {
-                loginError.classList.add('hidden');
                 const snapshot = await db.ref('admin_biometrics/fingerprint').once('value');
                 const data = snapshot.val();
 
                 if (!data || !data.credId) {
-                    loginError.innerText = '❌ No Fingerprint found in Cloud. Login with password and click "Set Fingerprint".';
+                    loginError.innerText = '❌ No Fingerprint registered in Cloud! First login with Password and click "Set Fingerprint".';
                     loginError.classList.remove('hidden'); 
                     return;
                 }
 
                 const challenge = new Uint8Array(32); 
                 window.crypto.getRandomValues(challenge);
-
                 const rawCredId = base64ToBuffer(data.credId);
 
                 const assertion = await navigator.credentials.get({
@@ -746,7 +748,7 @@
                 }
             } catch (err) { 
                 console.error("Fingerprint Verify Error:", err);
-                loginError.innerText = '❌ Fingerprint Verification Failed or Cancelled.'; 
+                loginError.innerText = '❌ Fingerprint Verification Failed: ' + (err.message || 'Cancelled'); 
                 loginError.classList.remove('hidden'); 
             }
         });
