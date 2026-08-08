@@ -208,7 +208,7 @@
                     </div>
 
                     <!-- Setup Face ID Button -->
-                    <button id="setupFaceBtn" title="Register Admin Face ID Multi-Angle" class="px-3 py-2 bg-emeraldDeep/10 hover:bg-emeraldDeep/20 border border-emeraldDeep/30 text-emeraldDeep rounded-lg sm:rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 active:scale-95 shadow-sm cursor-pointer">
+                    <button id="setupFaceBtn" title="Register Admin Face ID" class="px-3 py-2 bg-emeraldDeep/10 hover:bg-emeraldDeep/20 border border-emeraldDeep/30 text-emeraldDeep rounded-lg sm:rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 active:scale-95 shadow-sm cursor-pointer">
                         <i data-lucide="scan-face" class="w-4 h-4 text-emeraldDeep"></i>
                         <span class="hidden sm:inline">Set Face ID</span>
                     </button>
@@ -262,41 +262,27 @@
 
     </main>
 
-    <!-- Camera Modal for Face ID Setup & Auto-Scan Match Verification -->
+    <!-- Camera Modal for Fully Automatic Face ID Scanning -->
     <div id="cameraModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] hidden flex flex-col items-center justify-center p-4">
         <div class="bg-white rounded-2xl p-5 max-w-sm w-full text-center space-y-4 border border-goldAccent/40 shadow-2xl relative">
-            <h3 id="cameraModalTitle" class="font-serif font-bold text-lg text-emeraldDeep">Face ID Enrollment</h3>
-            <p id="cameraModalDesc" class="text-xs text-subText">Position face inside the ring</p>
+            <h3 id="cameraModalTitle" class="font-serif font-bold text-lg text-emeraldDeep">Face ID System</h3>
+            <p id="cameraModalDesc" class="text-xs text-subText">Position your face inside the circle</p>
             
             <div class="relative w-full aspect-square bg-black rounded-xl overflow-hidden border-2 border-goldAccent flex items-center justify-center">
                 <video id="webcamVideo" autoplay playsinline class="w-full h-full object-cover transform -scale-x-100"></video>
-                <!-- Center Cropping Ring Overlay -->
+                <!-- Central Focus Ring -->
                 <div id="scanRing" class="absolute inset-0 border-4 border-goldAccent rounded-full m-8 pointer-events-none shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]"></div>
             </div>
 
             <!-- Off-screen processing canvas -->
             <canvas id="faceCanvas" class="hidden"></canvas>
 
-            <!-- Progress Bar for Multi-Angle Setup -->
-            <div id="setupProgressBox" class="hidden space-y-1">
-                <div class="flex justify-between text-[11px] font-bold text-emeraldDeep">
-                    <span id="angleInstructionText">Look Straight</span>
-                    <span id="progressPercentText">0%</span>
-                </div>
-                <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
-                    <div id="progressBar" class="bg-goldAccent h-full w-0 transition-all duration-300"></div>
-                </div>
-            </div>
-
             <div id="scanStatusText" class="text-xs font-bold text-emeraldDeep flex items-center justify-center gap-2">
                 <div class="w-2 h-2 rounded-full bg-emeraldDeep animate-ping"></div>
-                <span>Scanning face automatically...</span>
+                <span id="scanStatusLabel">Scanning face automatically...</span>
             </div>
 
             <div class="flex items-center gap-2 pt-1">
-                <button id="captureFaceBtn" class="w-full py-3 bg-goldAccent text-emeraldDark font-bold rounded-xl active:scale-95 transition-all text-sm shadow-md">
-                    Start 3D Multi-Angle Scan
-                </button>
                 <button id="closeCameraBtn" class="w-full py-3 bg-gray-200 text-gray-700 font-semibold rounded-xl text-sm active:scale-95 transition-all">
                     Cancel
                 </button>
@@ -321,26 +307,13 @@
     <script>
         lucide.createIcons();
 
-        // Web App Deployment URL
         const scriptURL = 'https://script.google.com/macros/s/AKfycbwji8eSDfoUWXbcLNSAHLjjyNeBM604wkpEqtiIPeHrgFCTNDEoMJSbggBru00-NR-j2Q/exec';
 
         let globalData = [];
         let currentAdminPassword = '';
         let selectedUnitFilter = 'All';
         let cameraStream = null;
-        let isSetupMode = false;
         let autoScanInterval = null;
-
-        // Multi-Angle Registration States
-        let multiAngleVectors = [];
-        let registrationStep = 0;
-        const angleInstructions = [
-            "1/5: Look Straight Ahead",
-            "2/5: Turn Head Slightly Left",
-            "3/5: Turn Head Slightly Right",
-            "4/5: Tilt Head Slightly Up",
-            "5/5: Tilt Head Slightly Down"
-        ];
 
         const loginSection = document.getElementById('loginSection');
         const dashboardSection = document.getElementById('dashboardSection');
@@ -355,27 +328,20 @@
         const searchInput = document.getElementById('searchInput');
         const refreshBtn = document.getElementById('refreshBtn');
 
-        // Buttons
         const faceIdBtn = document.getElementById('faceIdBtn');
         const fingerprintBtn = document.getElementById('fingerprintBtn');
         const setupFaceBtn = document.getElementById('setupFaceBtn');
         const setupFingerprintBtn = document.getElementById('setupFingerprintBtn');
 
-        // Camera Modal Elements
         const cameraModal = document.getElementById('cameraModal');
         const cameraModalTitle = document.getElementById('cameraModalTitle');
         const cameraModalDesc = document.getElementById('cameraModalDesc');
         const webcamVideo = document.getElementById('webcamVideo');
         const faceCanvas = document.getElementById('faceCanvas');
-        const captureFaceBtn = document.getElementById('captureFaceBtn');
         const closeCameraBtn = document.getElementById('closeCameraBtn');
         const scanStatusText = document.getElementById('scanStatusText');
-        const setupProgressBox = document.getElementById('setupProgressBox');
-        const angleInstructionText = document.getElementById('angleInstructionText');
-        const progressPercentText = document.getElementById('progressPercentText');
-        const progressBar = document.getElementById('progressBar');
+        const scanStatusLabel = document.getElementById('scanStatusLabel');
 
-        // Buffer Utilities for WebAuthn
         function bufferToBase64(buffer) {
             return btoa(String.fromCharCode(...new Uint8Array(buffer)));
         }
@@ -384,7 +350,6 @@
             return Uint8Array.from(atob(base64), c => c.charCodeAt(0)).buffer;
         }
 
-        // Session persistence check
         const savedPass = sessionStorage.getItem('halawa_admin_pass');
         if (savedPass) {
             currentAdminPassword = savedPass;
@@ -416,26 +381,23 @@
         });
 
         // =====================================================================
-        // CENTER CROP & BACKGROUND-INVARIANT FEATURE EXTRACTION
+        // ADVANCED FULL-FACE AUTO SCANNER & FEATURE EXTRACTION
         // =====================================================================
 
-        // Extract facial features from CENTER OVAL ONLY (Completely Ignores Background Objects)
-        function extractCroppedFaceVector() {
+        function extractFullFaceVector() {
             const context = faceCanvas.getContext('2d');
             faceCanvas.width = 300;
             faceCanvas.height = 300;
 
-            // 1. Draw central crop from video stream (Crops out outer background)
             const videoWidth = webcamVideo.videoWidth || 640;
             const videoHeight = webcamVideo.videoHeight || 640;
-            const cropSize = Math.min(videoWidth, videoHeight) * 0.65; // Take central 65% frame
+            const cropSize = Math.min(videoWidth, videoHeight) * 0.75;
             const startX = (videoWidth - cropSize) / 2;
             const startY = (videoHeight - cropSize) / 2;
 
             context.drawImage(webcamVideo, startX, startY, cropSize, cropSize, 0, 0, 300, 300);
 
-            // 2. Multi-scale feature extraction on cropped face
-            const gridSize = 20;
+            const gridSize = 24;
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = gridSize;
             tempCanvas.height = gridSize;
@@ -446,12 +408,10 @@
             const data = imgData.data;
             const grays = new Float32Array(gridSize * gridSize);
 
-            // Convert to Luminance Grayscale
             for (let i = 0; i < data.length; i += 4) {
                 grays[i / 4] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
             }
 
-            // Histogram Equalization
             const histogram = new Int32Array(256);
             for (let i = 0; i < grays.length; i++) histogram[Math.floor(grays[i])]++;
 
@@ -467,14 +427,12 @@
                 for (let x = 1; x < gridSize - 1; x++) {
                     const idx = y * gridSize + x;
                     const val = cdf[Math.floor(grays[idx])] * 255;
-                    // Sobel Structural Gradient
                     const gx = val - (cdf[Math.floor(grays[idx - 1])] * 255);
                     const gy = val - (cdf[Math.floor(grays[idx - gridSize])] * 255);
                     featureVector.push(Math.sqrt(gx * gx + gy * gy));
                 }
             }
 
-            // Normalization
             let sum = 0;
             for (let i = 0; i < featureVector.length; i++) sum += featureVector[i];
             const mean = sum / featureVector.length;
@@ -493,7 +451,6 @@
             return featureVector;
         }
 
-        // Cosine similarity
         function calculateSimilarityScore(vecA, vecB) {
             if (!vecA || !vecB || vecA.length !== vecB.length) return 0;
             let dotProduct = 0, normA = 0, normB = 0;
@@ -506,26 +463,10 @@
             return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
         }
 
-        // Camera Controls
-        async function openCamera(setupMode = false) {
-            isSetupMode = setupMode;
-            cameraModalTitle.innerText = setupMode ? '3D Face ID Enrollment' : 'Face ID Auto-Scan';
-            cameraModalDesc.innerText = setupMode ? 'Follow on-screen instructions for 100% scan' : 'Position face inside ring for instant unlock';
-            
-            if (setupMode) {
-                captureFaceBtn.classList.remove('hidden');
-                setupProgressBox.classList.remove('hidden');
-                scanStatusText.classList.add('hidden');
-                captureFaceBtn.innerText = "Start 3D Multi-Angle Scan";
-                registrationStep = 0;
-                multiAngleVectors = [];
-                updateProgressUI(0);
-            } else {
-                captureFaceBtn.classList.add('hidden');
-                setupProgressBox.classList.add('hidden');
-                scanStatusText.classList.remove('hidden');
-                scanStatusText.innerHTML = '<div class="w-2 h-2 rounded-full bg-emeraldDeep animate-ping"></div><span>Scanning face automatically...</span>';
-            }
+        async function openCamera(isSetup = false) {
+            cameraModalTitle.innerText = isSetup ? 'Automatic Face Registration' : 'Face ID Login';
+            cameraModalDesc.innerText = isSetup ? 'Hold still. Scanning full face automatically...' : 'Looking at screen unlocks automatically...';
+            scanStatusLabel.innerText = isSetup ? 'Scanning and saving face...' : 'Analyzing face automatically...';
 
             try {
                 cameraStream = await navigator.mediaDevices.getUserMedia({
@@ -534,12 +475,23 @@
                 webcamVideo.srcObject = cameraStream;
                 cameraModal.classList.remove('hidden');
 
-                if (!setupMode) {
-                    startLiveAutoScan();
+                if (isSetup) {
+                    setTimeout(() => {
+                        const vector = extractFullFaceVector();
+                        localStorage.setItem('halawa_face_vector', JSON.stringify(vector));
+                        localStorage.setItem('halawa_face_saved_pass', currentAdminPassword);
+                        scanStatusLabel.innerText = '✅ Face Registered Successfully!';
+                        setTimeout(() => {
+                            stopCamera();
+                            alert('✅ Full Face ID Registered Successfully!');
+                        }, 800);
+                    }, 1500);
+                } else {
+                    startAutomaticFaceScan();
                 }
             } catch (err) {
                 console.error(err);
-                alert('❌ Unable to access camera. Please grant camera permissions.');
+                alert('❌ Camera access error.');
             }
         }
 
@@ -557,110 +509,46 @@
 
         closeCameraBtn.addEventListener('click', stopCamera);
 
-        function updateProgressUI(step) {
-            const percent = Math.min(100, Math.round((step / 5) * 100));
-            progressBar.style.width = `${percent}%`;
-            progressPercentText.innerText = `${percent}%`;
-            if (step < 5) {
-                angleInstructionText.innerText = angleInstructions[step];
-            } else {
-                angleInstructionText.innerText = "Enrollment 100% Complete!";
-            }
-        }
-
-        // Multi-Angle Registration Button Action
-        captureFaceBtn.addEventListener('click', () => {
-            if (!isSetupMode) return;
-
-            if (registrationStep < 5) {
-                // Capture vector for current angle
-                const currentVector = extractCroppedFaceVector();
-                multiAngleVectors.push(currentVector);
-
-                registrationStep++;
-                updateProgressUI(registrationStep);
-
-                if (registrationStep < 5) {
-                    captureFaceBtn.innerText = `Capture Angle ${registrationStep + 1}/5`;
-                } else {
-                    // Save multi-angle vector database
-                    localStorage.setItem('halawa_face_multi_vectors', JSON.stringify(multiAngleVectors));
-                    localStorage.setItem('halawa_face_saved_pass', currentAdminPassword);
-                    
-                    captureFaceBtn.innerText = "100% Complete!";
-                    setTimeout(() => {
-                        stopCamera();
-                        alert('✅ 100% Multi-Angle Face ID setup completed! Your Face ID will now work in any background and lighting.');
-                    }, 500);
-                }
-            }
-        });
-
-        // AUTO SCAN FACE FOR LOGIN (Matches against all 5 registered angles)
-        function startLiveAutoScan() {
+        function startAutomaticFaceScan() {
             if (autoScanInterval) clearInterval(autoScanInterval);
 
-            const rawMultiVectors = localStorage.getItem('halawa_face_multi_vectors');
+            const rawVector = localStorage.getItem('halawa_face_vector');
             const savedPass = localStorage.getItem('halawa_face_saved_pass');
 
-            if (!rawMultiVectors || !savedPass) {
+            if (!rawVector || !savedPass) {
                 stopCamera();
-                loginError.innerText = '❌ No registered Face ID found. Login with password first and click "Set Face ID".';
+                loginError.innerText = '❌ Face ID non-existent. Login via password first and set Face ID.';
                 loginError.classList.remove('hidden');
                 return;
             }
 
-            const registeredVectorsList = JSON.parse(rawMultiVectors);
+            const registeredVector = JSON.parse(rawVector);
 
             autoScanInterval = setInterval(() => {
                 if (!cameraStream || !webcamVideo.videoWidth) return;
 
-                const liveVector = extractCroppedFaceVector();
+                const currentVector = extractFullFaceVector();
+                const score = calculateSimilarityScore(registeredVector, currentVector);
 
-                // Check similarity against all 5 registered facial angles
-                let maxScore = 0;
-                for (let i = 0; i < registeredVectorsList.length; i++) {
-                    const score = calculateSimilarityScore(registeredVectorsList[i], liveVector);
-                    if (score > maxScore) maxScore = score;
-                }
-
-                console.log('Live Auto-Scan Max Angle Score:', maxScore);
-
-                // Background-Invariant Match Threshold (>= 0.52 structural match on center cropped face)
-                if (maxScore >= 0.52) {
-                    scanStatusText.innerHTML = '<span class="text-green-600 font-bold">✅ Face Recognized! Unlocking...</span>';
+                if (score >= 0.55) {
+                    scanStatusLabel.innerText = '✅ Access Granted! Logging in...';
                     stopCamera();
                     currentAdminPassword = savedPass;
                     fetchDashboardData();
                 }
-            }, 300); 
+            }, 300);
         }
 
-        // Face ID Login Button
-        faceIdBtn.addEventListener('click', () => {
-            const rawMultiVectors = localStorage.getItem('halawa_face_multi_vectors');
-            const savedPass = localStorage.getItem('halawa_face_saved_pass');
-
-            if (!rawMultiVectors || !savedPass) {
-                loginError.innerText = '❌ Face ID not registered. Login with password first and click "Set Face ID".';
-                loginError.classList.remove('hidden');
-                return;
-            }
-            openCamera(false);
-        });
-
-        // Setup Face ID Button Inside Dashboard
-        setupFaceBtn.addEventListener('click', () => {
-            openCamera(true);
-        });
+        faceIdBtn.addEventListener('click', () => openCamera(false));
+        setupFaceBtn.addEventListener('click', () => openCamera(true));
 
         // ==========================================
-        // FINGERPRINT AUTHENTICATION (WEBAUTHN)
+        // SECURE FINGERPRINT (WEBAUTHN WITH VERIFICATION)
         // ==========================================
 
         setupFingerprintBtn.addEventListener('click', async () => {
             if (!window.PublicKeyCredential) {
-                alert('❌ Fingerprint registration is restricted in this browser environment.');
+                alert('❌ Biometric authentication is not supported by this browser.');
                 return;
             }
 
@@ -678,7 +566,10 @@
                             displayName: "Admin"
                         },
                         pubKeyCredParams: [{ alg: -7, type: "public-key" }],
-                        authenticatorSelection: { userVerification: "preferred" },
+                        authenticatorSelection: { 
+                            userVerification: "required", // Strict verification
+                            authenticatorAttachment: "platform"
+                        },
                         timeout: 60000
                     }
                 });
@@ -717,7 +608,7 @@
                             id: base64ToBuffer(savedCredId),
                             type: 'public-key'
                         }],
-                        userVerification: "preferred",
+                        userVerification: "required", // Ensures authentic identity
                         timeout: 60000
                     }
                 });
@@ -728,7 +619,7 @@
                 }
             } catch (err) {
                 console.error(err);
-                loginError.innerText = '❌ Fingerprint verification failed or canceled.';
+                loginError.innerText = '❌ Fingerprint verification failed.';
                 loginError.classList.remove('hidden');
             }
         });
@@ -752,7 +643,7 @@
                 try {
                     return JSON.parse(text);
                 } catch (e) {
-                    throw new Error('Script returned non-JSON response. Please check Google Apps Script deployment.');
+                    throw new Error('Script returned non-JSON response.');
                 }
             }))
             .then(data => {
@@ -794,7 +685,6 @@
             document.getElementById('statThurayur').innerText = globalData.filter(d => (d.unit || '').toString().trim().toLowerCase() === 'thurayur').length;
         }
 
-        // Unit Filters
         document.querySelectorAll('.unit-filter-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.unit-filter-btn').forEach(b => {
@@ -823,10 +713,8 @@
             const filtered = globalData.filter(item => {
                 const itemUnit = (item.unit || '').toString().trim().toLowerCase();
                 const matchesUnit = (selectedUnitFilter === 'All') || (itemUnit === selectedUnitFilter.toLowerCase());
-                
                 const matchesSearch = (item.name || '').toString().toLowerCase().includes(searchTerm) || 
                                       (item.mobile || '').toString().includes(searchTerm);
-                                      
                 return matchesUnit && matchesSearch;
             });
 
@@ -846,7 +734,6 @@
                     const cleanPhone = rawMobile.replace(/[^\d+]/g, '');
                     const unit = escapeHtml((row.unit || '').toString());
                     
-                    // Desktop Table Row
                     const tr = document.createElement('tr');
                     tr.className = 'hover:bg-goldAccent/5 transition-colors';
                     tr.innerHTML = `
@@ -867,7 +754,6 @@
                     `;
                     tableBodyDesktop.appendChild(tr);
 
-                    // Mobile Card View
                     const card = document.createElement('div');
                     card.className = 'p-3.5 space-y-2.5';
                     card.innerHTML = `
@@ -901,4 +787,3 @@
     </script>
 </body>
 </html>
-
