@@ -38,7 +38,7 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- face-api.js CDN (defer മാറ്റിയത്) -->
+    <!-- face-api.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
 
     <!-- Firebase SDKs -->
@@ -268,11 +268,6 @@
                 <div id="scanRing" class="absolute inset-0 border-4 border-goldAccent rounded-full m-6 pointer-events-none transition-all duration-300 shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]"></div>
             </div>
 
-            <!-- Lighting Warning -->
-            <div id="lightingWarning" class="hidden text-[11px] font-bold text-amber-600 bg-amber-50 py-1.5 px-3 rounded-lg border border-amber-200">
-                ⚠️ Low lighting detected! Move to a brighter area.
-            </div>
-
             <!-- Progress Bar -->
             <div id="progressContainer" class="space-y-1.5 hidden">
                 <div class="flex justify-between text-xs font-bold text-emeraldDeep">
@@ -289,9 +284,17 @@
                 <span id="scanStatusLabel">Initializing AI Models...</span>
             </div>
 
-            <button id="closeCameraBtn" class="w-full py-3 bg-gray-200 text-gray-700 font-semibold rounded-xl text-sm active:scale-95 transition-all">
-                Cancel
-            </button>
+            <div class="grid grid-cols-1 gap-2 pt-1">
+                <!-- NEXT BUTTON (Shows when 100% completed) -->
+                <button id="nextStepBtn" class="hidden w-full py-3 bg-emeraldDeep text-white font-bold rounded-xl text-sm shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <span>Next / സബ്മിറ്റ് ചെയ്യുക</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+
+                <button id="closeCameraBtn" class="w-full py-2.5 bg-gray-200 text-gray-700 font-semibold rounded-xl text-xs active:scale-95 transition-all">
+                    Cancel
+                </button>
+            </div>
         </div>
     </div>
 
@@ -309,9 +312,7 @@
     <script>
         lucide.createIcons();
 
-        // ----------------------------------------------------
         // FIREBASE SETUP
-        // ----------------------------------------------------
         const firebaseConfig = {
             apiKey: "AIzaSyCvdJey-Hx0HeAeOj1727dtiiBhM7tjUcM",
             authDomain: "halawa-admin-fa183.firebaseapp.com",
@@ -339,6 +340,7 @@
         let capturedDescriptors = [];
         let anglesCompleted = { center: false, left: false, right: false, up: false, down: false };
         let blinkDetected = false;
+        let preloadedCloudBiometrics = null;
 
         const loginSection = document.getElementById('loginSection');
         const dashboardSection = document.getElementById('dashboardSection');
@@ -362,15 +364,27 @@
         const webcamVideo = document.getElementById('webcamVideo');
         const scanRing = document.getElementById('scanRing');
         const closeCameraBtn = document.getElementById('closeCameraBtn');
+        const nextStepBtn = document.getElementById('nextStepBtn');
         const scanStatusLabel = document.getElementById('scanStatusLabel');
         const progressContainer = document.getElementById('progressContainer');
         const progressBar = document.getElementById('progressBar');
         const progressText = document.getElementById('progressText');
         const instructionText = document.getElementById('instructionText');
-        const lightingWarning = document.getElementById('lightingWarning');
 
-        function bufferToBase64(buffer) { return btoa(String.fromCharCode(...new Uint8Array(buffer))); }
-        function base64ToBuffer(base64) { return Uint8Array.from(atob(base64), c => c.charCodeAt(0)).buffer; }
+        function bufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            for (let i = 0; i < bytes.byteLength; i++) { binary += String.fromCharCode(bytes[i]); }
+            return window.btoa(binary);
+        }
+
+        function base64ToBuffer(base64) {
+            const binary_string = window.atob(base64);
+            const len = binary_string.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) { bytes[i] = binary_string.charCodeAt(i); }
+            return bytes.buffer;
+        }
 
         const savedPass = sessionStorage.getItem('halawa_admin_pass');
         if (savedPass) { currentAdminPassword = savedPass; fetchDashboardData(); }
@@ -390,7 +404,7 @@
         logoutBtn.addEventListener('click', () => { sessionStorage.removeItem('halawa_admin_pass'); location.reload(); });
         refreshBtn.addEventListener('click', () => { refreshBtn.classList.add('animate-spin'); fetchDashboardData(() => refreshBtn.classList.remove('animate-spin')); });
 
-        // UPDATED: Reliable AI Model Loader
+        // Fast & Reliable Model Loading
         async function loadFaceApiModels() {
             if (faceModelsLoaded) return true;
             try {
@@ -412,13 +426,21 @@
 
         async function openCamera(setup = false) {
             isSetupMode = setup;
+            nextStepBtn.classList.add('hidden');
             progressContainer.classList.toggle('hidden', !setup);
             if (setup) resetEnrollmentProgress();
 
             cameraModal.classList.remove('hidden');
 
             try {
-                cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 640 } });
+                // Background download from cloud for fast response
+                if (!setup) {
+                    db.ref('admin_biometrics/face_id').once('value').then(snap => {
+                        preloadedCloudBiometrics = snap.val();
+                    });
+                }
+
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 480, height: 480 } });
                 webcamVideo.srcObject = cameraStream;
 
                 const loaded = await loadFaceApiModels();
@@ -428,7 +450,7 @@
                 else startAiVerificationProcess();
 
             } catch (err) {
-                alert('❌ Unable to access camera.');
+                alert('❌ Unable to access camera. Check permissions.');
                 stopCamera();
             }
         }
@@ -438,7 +460,7 @@
             if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
             cameraModal.classList.add('hidden');
             scanRing.classList.remove('scan-ring-active');
-            lightingWarning.classList.add('hidden');
+            nextStepBtn.classList.add('hidden');
         }
 
         closeCameraBtn.addEventListener('click', stopCamera);
@@ -461,7 +483,7 @@
             else if (!anglesCompleted.right) instructionText.innerText = "Turn Head Right";
             else if (!anglesCompleted.up) instructionText.innerText = "Tilt Head Up";
             else if (!anglesCompleted.down) instructionText.innerText = "Tilt Head Down";
-            else instructionText.innerText = "✅ 100% Scan Completed!";
+            else instructionText.innerText = "✅ Scan Complete!";
         }
 
         function getEyeAspectRatio(eye) {
@@ -471,13 +493,15 @@
             return (v1 + v2) / (2.0 * h);
         }
 
+        // ENROLLMENT PROCESS (With NEXT Button)
         function startAiEnrollmentProcess() {
-            scanStatusLabel.innerText = "Align face in circle...";
+            scanStatusLabel.innerText = "Align face in frame...";
 
             scanInterval = setInterval(async () => {
                 if (!webcamVideo.videoWidth) return;
 
-                const detection = await faceapi.detectSingleFace(webcamVideo, new faceapi.TinyFaceDetectorOptions())
+                // Optimized for high speed
+                const detection = await faceapi.detectSingleFace(webcamVideo, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }))
                     .withFaceLandmarks()
                     .withFaceDescriptor();
 
@@ -488,7 +512,7 @@
                 }
 
                 scanRing.classList.add('scan-ring-active');
-                scanStatusLabel.innerText = "Scanning facial landmarks...";
+                scanStatusLabel.innerText = "Scanning features...";
 
                 const landmarks = detection.landmarks;
                 const nose = landmarks.getNose()[0];
@@ -512,158 +536,225 @@
 
                 updateProgressUI();
 
+                // WHEN 100% COMPLETE -> PAUSE SCAN & SHOW NEXT BUTTON
                 if (Object.values(anglesCompleted).every(Boolean)) {
                     clearInterval(scanInterval); scanInterval = null;
-
-                    db.ref('admin_biometrics/face_id').set({
-                        descriptors: capturedDescriptors,
-                        password: currentAdminPassword,
-                        updatedAt: new Date().toISOString()
-                    }).then(() => {
-                        scanStatusLabel.innerText = "✅ Face ID Uploaded to Firebase!";
-                        setTimeout(() => {
-                            stopCamera();
-                            alert('✅ 100% Face ID registered & saved securely to Firebase Cloud!');
-                        }, 800);
-                    }).catch(err => {
-                        alert('❌ Firebase Sync Error: ' + err.message);
-                        stopCamera();
-                    });
+                    scanStatusLabel.innerText = "🎉 100% Face Scan Complete!";
+                    nextStepBtn.classList.remove('hidden');
+                    lucide.createIcons();
                 }
-            }, 250);
+            }, 120);
         }
 
-        function startAiVerificationProcess() {
-            scanStatusLabel.innerText = "Fetching Face ID Cloud Data...";
+        // NEXT BUTTON CLICK EVENT
+        nextStepBtn.addEventListener('click', function() {
+            nextStepBtn.disabled = true;
+            nextStepBtn.innerText = "Saving to Firebase...";
 
-            db.ref('admin_biometrics/face_id').once('value').then(snapshot => {
-                const data = snapshot.val();
-                if (!data || !data.descriptors) {
-                    stopCamera();
-                    loginError.innerText = '❌ Face ID not found in Firebase. Login with password and click "Set Face ID".';
-                    loginError.classList.remove('hidden');
+            db.ref('admin_biometrics/face_id').set({
+                descriptors: capturedDescriptors,
+                password: currentAdminPassword,
+                updatedAt: new Date().toISOString()
+            }).then(() => {
+                stopCamera();
+                alert('✅ Face ID successfully registered and saved to Firebase Cloud!');
+            }).catch(err => {
+                alert('❌ Firebase Error: ' + err.message);
+                nextStepBtn.disabled = false;
+            });
+        });
+
+        // REAL-TIME VERIFICATION PROCESS (Fast)
+        async function startAiVerificationProcess() {
+            scanStatusLabel.innerText = "Connecting to Cloud...";
+
+            let data = preloadedCloudBiometrics;
+            if (!data) {
+                const snapshot = await db.ref('admin_biometrics/face_id').once('value');
+                data = snapshot.val();
+            }
+
+            if (!data || !data.descriptors) {
+                stopCamera();
+                loginError.innerText = '❌ No Face ID registered in Cloud. Please log in with password and set Face ID.';
+                loginError.classList.remove('hidden');
+                return;
+            }
+
+            const savedDescriptorsList = data.descriptors;
+            const savedPass = data.password;
+            scanStatusLabel.innerText = "👁️ Please Blink Eyes...";
+
+            scanInterval = setInterval(async () => {
+                if (!webcamVideo.videoWidth) return;
+
+                const detection = await faceapi.detectSingleFace(webcamVideo, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }))
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
+
+                if (!detection) {
+                    scanRing.classList.remove('scan-ring-active');
+                    scanStatusLabel.innerText = "Position face in ring...";
                     return;
                 }
 
-                const savedDescriptorsList = data.descriptors;
-                const savedPass = data.password;
-                scanStatusLabel.innerText = "Please Blink Your Eyes...";
+                scanRing.classList.add('scan-ring-active');
 
-                scanInterval = setInterval(async () => {
-                    if (!webcamVideo.videoWidth) return;
+                const leftEAR = getEyeAspectRatio(detection.landmarks.getLeftEye());
+                const rightEAR = getEyeAspectRatio(detection.landmarks.getRightEye());
+                const ear = (leftEAR + rightEAR) / 2.0;
 
-                    const detection = await faceapi.detectSingleFace(webcamVideo, new faceapi.TinyFaceDetectorOptions())
-                        .withFaceLandmarks()
-                        .withFaceDescriptor();
+                if (ear < 0.22) blinkDetected = true;
 
-                    if (!detection) {
-                        scanRing.classList.remove('scan-ring-active');
-                        scanStatusLabel.innerText = "Position face in ring...";
-                        return;
-                    }
+                if (!blinkDetected) {
+                    scanStatusLabel.innerText = "👁️ Please Blink Eyes (Liveness Check)";
+                    return;
+                }
 
-                    scanRing.classList.add('scan-ring-active');
+                scanStatusLabel.innerText = "Verifying Identity...";
 
-                    const leftEAR = getEyeAspectRatio(detection.landmarks.getLeftEye());
-                    const rightEAR = getEyeAspectRatio(detection.landmarks.getRightEye());
-                    const ear = (leftEAR + rightEAR) / 2.0;
+                const liveDescriptor = detection.descriptor;
+                let minDistance = 1.0;
 
-                    if (ear < 0.22) blinkDetected = true;
+                for (let savedDesc of savedDescriptorsList) {
+                    const dist = faceapi.euclideanDistance(liveDescriptor, new Float32Array(savedDesc));
+                    if (dist < minDistance) minDistance = dist;
+                }
 
-                    if (!blinkDetected) {
-                        scanStatusLabel.innerText = "👁️ Please Blink Eyes (Liveness Check)";
-                        return;
-                    }
+                if (minDistance <= 0.46) {
+                    scanStatusLabel.innerText = "✅ Face Verified! Logging in...";
+                    clearInterval(scanInterval); scanInterval = null;
 
-                    scanStatusLabel.innerText = "Verifying face features...";
-
-                    const liveDescriptor = detection.descriptor;
-                    let minDistance = 1.0;
-
-                    for (let savedDesc of savedDescriptorsList) {
-                        const dist = faceapi.euclideanDistance(liveDescriptor, new Float32Array(savedDesc));
-                        if (dist < minDistance) minDistance = dist;
-                    }
-
-                    if (minDistance <= 0.45) {
-                        scanStatusLabel.innerText = "✅ Face & Liveness Verified!";
-                        clearInterval(scanInterval); scanInterval = null;
-
-                        setTimeout(() => {
-                            stopCamera();
-                            currentAdminPassword = savedPass;
-                            fetchDashboardData();
-                        }, 500);
-                    }
-                }, 200);
-
-            }).catch(err => {
-                stopCamera();
-                alert('❌ Firebase Read Error: ' + err.message);
-            });
+                    setTimeout(() => {
+                        stopCamera();
+                        currentAdminPassword = savedPass;
+                        fetchDashboardData();
+                    }, 300);
+                }
+            }, 100);
         }
 
         faceIdBtn.addEventListener('click', () => openCamera(false));
         setupFaceBtn.addEventListener('click', () => openCamera(true));
 
+        // FIXED FINGERPRINT (WebAuthn API)
         setupFingerprintBtn.addEventListener('click', async () => {
-            if (!window.PublicKeyCredential) { alert('❌ WebAuthn not supported.'); return; }
+            if (!window.PublicKeyCredential) {
+                alert('❌ Biometric Fingerprint is not supported on this browser/device.');
+                return;
+            }
+
             try {
-                const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
+                const challenge = new Uint8Array(32); 
+                window.crypto.getRandomValues(challenge);
+
+                const userId = new TextEncoder().encode("admin_halawa_user");
+
                 const credential = await navigator.credentials.create({
                     publicKey: {
-                        challenge, rp: { name: "Halawa Admin" },
-                        user: { id: new Uint8Array([1, 2, 3, 4]), name: "admin@halawa.com", displayName: "Admin" },
-                        pubKeyCredParams: [{ alg: -7, type: "public-key" }],
-                        authenticatorSelection: { userVerification: "required", authenticatorAttachment: "platform" },
+                        challenge: challenge,
+                        rp: { name: "Halawa Admin" },
+                        user: {
+                            id: userId,
+                            name: "admin@halawa.com",
+                            displayName: "Halawa Admin"
+                        },
+                        pubKeyCredParams: [
+                            { alg: -7, type: "public-key" },  // ES256
+                            { alg: -257, type: "public-key" } // RS256
+                        ],
+                        authenticatorSelection: {
+                            authenticatorAttachment: "platform",
+                            userVerification: "preferred"
+                        },
                         timeout: 60000
                     }
                 });
 
                 if (credential) {
                     const credId = bufferToBase64(credential.rawId);
-                    await db.ref('admin_biometrics/fingerprint').set({ credId, password: currentAdminPassword });
-                    alert('✅ Fingerprint saved to Firebase successfully!');
+                    await db.ref('admin_biometrics/fingerprint').set({ 
+                        credId: credId, 
+                        password: currentAdminPassword,
+                        updatedAt: new Date().toISOString()
+                    });
+                    alert('✅ Fingerprint saved and linked to Cloud successfully!');
                 }
-            } catch (err) { alert('❌ Setup failed: ' + err.message); }
+            } catch (err) { 
+                console.error("Fingerprint Setup Error:", err);
+                alert('❌ Fingerprint Setup Failed: ' + err.message); 
+            }
         });
 
         fingerprintBtn.addEventListener('click', async () => {
             try {
+                loginError.classList.add('hidden');
                 const snapshot = await db.ref('admin_biometrics/fingerprint').once('value');
                 const data = snapshot.val();
+
                 if (!data || !data.credId) {
-                    loginError.innerText = '❌ Fingerprint not found in Firebase.'; loginError.classList.remove('hidden'); return;
+                    loginError.innerText = '❌ No Fingerprint found in Cloud. Login with password and click "Set Fingerprint".';
+                    loginError.classList.remove('hidden'); 
+                    return;
                 }
 
-                const challenge = new Uint8Array(32); window.crypto.getRandomValues(challenge);
+                const challenge = new Uint8Array(32); 
+                window.crypto.getRandomValues(challenge);
+
+                const rawCredId = base64ToBuffer(data.credId);
+
                 const assertion = await navigator.credentials.get({
                     publicKey: {
-                        challenge, allowCredentials: [{ id: base64ToBuffer(data.credId), type: 'public-key' }],
-                        userVerification: "required", timeout: 60000
+                        challenge: challenge,
+                        allowCredentials: [{ 
+                            id: rawCredId, 
+                            type: 'public-key' 
+                        }],
+                        userVerification: "preferred",
+                        timeout: 60000
                     }
                 });
 
-                if (assertion) { currentAdminPassword = data.password; fetchDashboardData(); }
-            } catch (err) { loginError.innerText = '❌ Verification failed.'; loginError.classList.remove('hidden'); }
+                if (assertion) { 
+                    currentAdminPassword = data.password; 
+                    fetchDashboardData(); 
+                }
+            } catch (err) { 
+                console.error("Fingerprint Verify Error:", err);
+                loginError.innerText = '❌ Fingerprint Verification Failed or Cancelled.'; 
+                loginError.classList.remove('hidden'); 
+            }
         });
 
         function fetchDashboardData(callback) {
-            loginBtn.disabled = true; loginBtn.innerHTML = '<span>Verifying...</span>'; loginError.classList.add('hidden');
+            loginBtn.disabled = true; 
+            loginBtn.innerHTML = '<span>Verifying...</span>'; 
+            loginError.classList.add('hidden');
+
             fetch(`${scriptURL}?action=getData&password=${encodeURIComponent(currentAdminPassword)}`, { method: 'GET', redirect: 'follow' })
             .then(res => res.json())
             .then(data => {
                 if (data.result === 'success') {
                     sessionStorage.setItem('halawa_admin_pass', currentAdminPassword);
-                    loginSection.classList.add('hidden'); dashboardSection.classList.remove('hidden'); logoutBtn.classList.remove('hidden');
-                    globalData = data.data || []; updateMetrics(); renderData();
+                    loginSection.classList.add('hidden'); 
+                    dashboardSection.classList.remove('hidden'); 
+                    logoutBtn.classList.remove('hidden');
+                    globalData = data.data || []; 
+                    updateMetrics(); 
+                    renderData();
                 } else {
-                    loginError.innerText = '❌ Incorrect Password or Auth Error'; loginError.classList.remove('hidden');
+                    loginError.innerText = '❌ Incorrect Password or Auth Error'; 
+                    loginError.classList.remove('hidden');
                 }
-            }).catch(err => { loginError.innerText = '❌ Connection Error'; loginError.classList.remove('hidden'); })
+            }).catch(err => { 
+                loginError.innerText = '❌ Connection Error'; 
+                loginError.classList.remove('hidden'); 
+            })
             .finally(() => {
-                loginBtn.disabled = false; loginBtn.innerHTML = '<span>Access Dashboard</span><i data-lucide="arrow-right" class="w-4 h-4 sm:w-5 sm:h-5"></i>';
-                lucide.createIcons(); if (callback) callback();
+                loginBtn.disabled = false; 
+                loginBtn.innerHTML = '<span>Access Dashboard</span><i data-lucide="arrow-right" class="w-4 h-4 sm:w-5 sm:h-5"></i>';
+                lucide.createIcons(); 
+                if (callback) callback();
             });
         }
 
@@ -677,10 +768,13 @@
         document.querySelectorAll('.unit-filter-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.unit-filter-btn').forEach(b => {
-                    b.classList.remove('bg-emeraldDeep', 'text-white'); b.classList.add('bg-white', 'border', 'border-goldAccent/40', 'text-darkText');
+                    b.classList.remove('bg-emeraldDeep', 'text-white'); 
+                    b.classList.add('bg-white', 'border', 'border-goldAccent/40', 'text-darkText');
                 });
-                this.classList.remove('bg-white', 'border', 'border-goldAccent/40', 'text-darkText'); this.classList.add('bg-emeraldDeep', 'text-white');
-                selectedUnitFilter = this.getAttribute('data-unit'); renderData();
+                this.classList.remove('bg-white', 'border', 'border-goldAccent/40', 'text-darkText'); 
+                this.classList.add('bg-emeraldDeep', 'text-white');
+                selectedUnitFilter = this.getAttribute('data-unit'); 
+                renderData();
             });
         });
 
@@ -701,8 +795,12 @@
                 return matchesUnit && matchesSearch;
             });
 
-            tableBodyDesktop.innerHTML = ''; mobileCardList.innerHTML = '';
-            if (filtered.length === 0) { emptyState.classList.remove('hidden'); } else {
+            tableBodyDesktop.innerHTML = ''; 
+            mobileCardList.innerHTML = '';
+
+            if (filtered.length === 0) { 
+                emptyState.classList.remove('hidden'); 
+            } else {
                 emptyState.classList.add('hidden');
                 filtered.forEach((row, index) => {
                     const formattedDate = formatDate(row.timestamp);
