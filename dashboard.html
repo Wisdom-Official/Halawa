@@ -142,7 +142,7 @@
 
                         <button type="button" id="fingerprintBtn" class="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 border border-goldAccent/40 text-goldLight font-semibold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer">
                             <i data-lucide="fingerprint" class="w-4 h-4 text-goldAccent"></i>
-                            <span>Fingerprint</span>
+                            <span id="fingerprintBtnText">Fingerprint</span>
                         </button>
                     </div>
                 </form>
@@ -355,6 +355,7 @@
 
         const faceIdBtn = document.getElementById('faceIdBtn');
         const fingerprintBtn = document.getElementById('fingerprintBtn');
+        const fingerprintBtnText = document.getElementById('fingerprintBtnText');
         const setupFaceBtn = document.getElementById('setupFaceBtn');
         const setupFingerprintBtn = document.getElementById('setupFingerprintBtn');
 
@@ -369,9 +370,10 @@
         const progressText = document.getElementById('progressText');
         const instructionText = document.getElementById('instructionText');
 
+        // Robust Base64 Helpers for WebAuthn Buffers
         function bufferToBase64(buffer) {
-            let binary = '';
             const bytes = new Uint8Array(buffer);
+            let binary = '';
             for (let i = 0; i < bytes.byteLength; i++) { binary += String.fromCharCode(bytes[i]); }
             return window.btoa(binary);
         }
@@ -381,7 +383,7 @@
             const len = binary_string.length;
             const bytes = new Uint8Array(len);
             for (let i = 0; i < len; i++) { bytes[i] = binary_string.charCodeAt(i); }
-            return bytes.buffer;
+            return bytes;
         }
 
         const savedPass = sessionStorage.getItem('halawa_admin_pass');
@@ -438,7 +440,7 @@
                     });
                 }
 
-                cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 480, height: 480 } });
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 320, height: 320 } });
                 webcamVideo.srcObject = cameraStream;
 
                 const loaded = await loadFaceApiModels();
@@ -484,20 +486,13 @@
             else instructionText.innerText = "✅ Scan Complete!";
         }
 
-        function getEyeAspectRatio(eye) {
-            const v1 = Math.hypot(eye[1].x - eye[5].x, eye[1].y - eye[5].y);
-            const v2 = Math.hypot(eye[2].x - eye[4].x, eye[2].y - eye[4].y);
-            const h = Math.hypot(eye[0].x - eye[3].x, eye[0].y - eye[3].y);
-            return (v1 + v2) / (2.0 * h);
-        }
-
         function startAiEnrollmentProcess() {
             scanStatusLabel.innerText = "Align face in frame...";
 
             scanInterval = setInterval(async () => {
                 if (!webcamVideo.videoWidth) return;
 
-                const detection = await faceapi.detectSingleFace(webcamVideo, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }))
+                const detection = await faceapi.detectSingleFace(webcamVideo, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 }))
                     .withFaceLandmarks()
                     .withFaceDescriptor();
 
@@ -534,11 +529,11 @@
 
                 if (Object.values(anglesCompleted).every(Boolean)) {
                     clearInterval(scanInterval); scanInterval = null;
-                    scanStatusLabel.innerText = "🎉 100% Face Scan Complete!";
+                    scanStatusLabel.innerText = "🎉 100% Scan Complete! Click Save below.";
                     nextStepBtn.classList.remove('hidden');
                     lucide.createIcons();
                 }
-            }, 120);
+            }, 80);
         }
 
         nextStepBtn.addEventListener('click', function() {
@@ -546,46 +541,27 @@
             nextStepBtn.innerText = "Saving to Firebase...";
             scanStatusLabel.innerText = "Connecting to Cloud Database...";
 
-            let isHandled = false;
-            const timeoutTimer = setTimeout(() => {
-                if (!isHandled) {
-                    isHandled = true;
-                    nextStepBtn.disabled = false;
-                    nextStepBtn.innerText = "Retry Saving";
-                    scanStatusLabel.innerText = "❌ Timeout: Firebase server taking too long. Check Rules/Network.";
-                    alert("❌ Save Timeout! Check if Firebase Realtime Database Rules allow write permissions.");
-                }
-            }, 8000);
-
             db.ref('admin_biometrics/face_id').set({
                 descriptors: capturedDescriptors,
                 password: currentAdminPassword,
                 updatedAt: new Date().toISOString()
             }).then(() => {
-                if (!isHandled) {
-                    isHandled = true;
-                    clearTimeout(timeoutTimer);
-                    scanStatusLabel.innerText = "✅ Successfully Saved!";
-                    setTimeout(() => {
-                        stopCamera();
-                        alert('✅ Face ID successfully registered and saved to Firebase Cloud!');
-                    }, 400);
-                }
+                scanStatusLabel.innerText = "✅ Face ID Successfully Saved!";
+                alert("✅ Face ID scan saved successfully to Firebase!");
+                setTimeout(() => {
+                    stopCamera();
+                }, 500);
             }).catch(err => {
-                if (!isHandled) {
-                    isHandled = true;
-                    clearTimeout(timeoutTimer);
-                    console.error("Firebase Error:", err);
-                    nextStepBtn.disabled = false;
-                    nextStepBtn.innerText = "Retry Saving";
-                    scanStatusLabel.innerText = "❌ Firebase Error: " + err.message;
-                    alert("❌ Firebase Error: " + err.message + "\nCheck Rules setting in Firebase Console.");
-                }
+                console.error("Firebase Error:", err);
+                nextStepBtn.disabled = false;
+                nextStepBtn.innerText = "Retry Saving";
+                scanStatusLabel.innerText = "❌ Firebase Error: " + err.message;
+                alert("❌ Firebase Error: " + err.message);
             });
         });
 
         async function startAiVerificationProcess() {
-            scanStatusLabel.innerText = "Connecting to Cloud...";
+            scanStatusLabel.innerText = "Scanning face...";
 
             let data = preloadedCloudBiometrics;
             if (!data) {
@@ -606,13 +582,11 @@
 
             const savedDescriptorsList = data.descriptors;
             const savedPass = data.password;
-            scanStatusLabel.innerText = "👁️ Please Blink Eyes...";
 
             scanInterval = setInterval(async () => {
                 if (!webcamVideo.videoWidth) return;
 
-                const detection = await faceapi.detectSingleFace(webcamVideo, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }))
-                    .withFaceLandmarks()
+                const detection = await faceapi.detectSingleFace(webcamVideo, new faceapi.TinyFaceDetectorOptions({ inputSize: 160, scoreThreshold: 0.4 }))
                     .withFaceDescriptor();
 
                 if (!detection) {
@@ -622,18 +596,6 @@
                 }
 
                 scanRing.classList.add('scan-ring-active');
-
-                const leftEAR = getEyeAspectRatio(detection.landmarks.getLeftEye());
-                const rightEAR = getEyeAspectRatio(detection.landmarks.getRightEye());
-                const ear = (leftEAR + rightEAR) / 2.0;
-
-                if (ear < 0.22) blinkDetected = true;
-
-                if (!blinkDetected) {
-                    scanStatusLabel.innerText = "👁️ Please Blink Eyes (Liveness Check)";
-                    return;
-                }
-
                 scanStatusLabel.innerText = "Verifying Identity...";
 
                 const liveDescriptor = detection.descriptor;
@@ -644,7 +606,7 @@
                     if (dist < minDistance) minDistance = dist;
                 }
 
-                if (minDistance <= 0.46) {
+                if (minDistance <= 0.52) {
                     scanStatusLabel.innerText = "✅ Face Verified! Logging in...";
                     clearInterval(scanInterval); scanInterval = null;
 
@@ -652,15 +614,15 @@
                         stopCamera();
                         currentAdminPassword = savedPass;
                         fetchDashboardData();
-                    }, 300);
+                    }, 200);
                 }
-            }, 100);
+            }, 60);
         }
 
         faceIdBtn.addEventListener('click', () => openCamera(false));
         setupFaceBtn.addEventListener('click', () => openCamera(true));
 
-        // IMPROVED BIOMETRIC FINGERPRINT REGISTRATION (SET FINGERPRINT)
+        // SETUP FINGERPRINT
         setupFingerprintBtn.addEventListener('click', async () => {
             if (!window.PublicKeyCredential) {
                 alert('❌ Biometric Fingerprint / Passkey is not supported on this browser or device.');
@@ -707,14 +669,19 @@
             }
         });
 
-        // IMPROVED BIOMETRIC FINGERPRINT LOGIN (VERIFY FINGERPRINT)
-        fingerprintBtn.addEventListener('click', async () => {
+        // FINGERPRINT LOGIN (FIXED RESPONSE & ERROR HANDLING)
+        fingerprintBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
             loginError.classList.add('hidden');
+            
             if (!window.PublicKeyCredential) {
-                loginError.innerText = '❌ Biometric Fingerprint is not supported on this browser.';
+                loginError.innerText = '❌ Biometric Fingerprint is not supported on this browser or device.';
                 loginError.classList.remove('hidden');
                 return;
             }
+
+            fingerprintBtn.disabled = true;
+            fingerprintBtnText.innerText = "Scanning...";
 
             try {
                 const snapshot = await db.ref('admin_biometrics/fingerprint').once('value');
@@ -723,6 +690,8 @@
                 if (!data || !data.credId) {
                     loginError.innerText = '❌ No Fingerprint registered in Cloud! First login with Password and click "Set Fingerprint".';
                     loginError.classList.remove('hidden'); 
+                    fingerprintBtn.disabled = false;
+                    fingerprintBtnText.innerText = "Fingerprint";
                     return;
                 }
 
@@ -730,6 +699,7 @@
                 window.crypto.getRandomValues(challenge);
                 const rawCredId = base64ToBuffer(data.credId);
 
+                // Open Native Device Fingerprint Scanner
                 const assertion = await navigator.credentials.get({
                     publicKey: {
                         challenge: challenge,
@@ -743,13 +713,17 @@
                 });
 
                 if (assertion) { 
+                    fingerprintBtnText.innerText = "Verified!";
                     currentAdminPassword = data.password; 
                     fetchDashboardData(); 
                 }
             } catch (err) { 
                 console.error("Fingerprint Verify Error:", err);
-                loginError.innerText = '❌ Fingerprint Verification Failed: ' + (err.message || 'Cancelled'); 
+                loginError.innerText = '❌ Fingerprint Failed: ' + (err.message || 'Verification Cancelled'); 
                 loginError.classList.remove('hidden'); 
+            } finally {
+                fingerprintBtn.disabled = false;
+                fingerprintBtnText.innerText = "Fingerprint";
             }
         });
 
