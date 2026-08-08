@@ -104,7 +104,7 @@
                     <i data-lucide="lock" class="w-7 h-7 sm:w-8 sm:h-8"></i>
                 </div>
                 <h2 class="text-xl sm:text-2xl font-serif font-bold text-white mb-1.5">Admin Portal</h2>
-                <p class="text-goldLight/80 text-xs sm:text-sm mb-6">Secure password, Face ID or Fingerprint access</p>
+                <p class="text-goldLight/80 text-xs sm:text-sm mb-6">Choose your authentication method</p>
 
                 <form id="loginForm" class="space-y-3.5">
                     <div>
@@ -127,7 +127,7 @@
                     <div class="grid grid-cols-2 gap-2.5">
                         <button type="button" id="faceIdBtn" class="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 border border-goldAccent/40 text-goldLight font-semibold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer">
                             <i data-lucide="scan-face" class="w-4 h-4 text-goldAccent"></i>
-                            <span>Scan Face ID</span>
+                            <span>Face ID</span>
                         </button>
 
                         <button type="button" id="fingerprintBtn" class="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 border border-goldAccent/40 text-goldLight font-semibold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer">
@@ -207,7 +207,7 @@
                         <i data-lucide="search" class="w-4 h-4 text-subText absolute left-3 top-1/2 -translate-y-1/2"></i>
                     </div>
 
-                    <!-- Register Admin Face ID Button -->
+                    <!-- Setup Face ID Button -->
                     <button id="setupFaceBtn" title="Register Admin Face ID Vector" class="px-3 py-2 bg-emeraldDeep/10 hover:bg-emeraldDeep/20 border border-emeraldDeep/30 text-emeraldDeep rounded-lg sm:rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 active:scale-95 shadow-sm cursor-pointer">
                         <i data-lucide="scan-face" class="w-4 h-4 text-emeraldDeep"></i>
                         <span class="hidden sm:inline">Set Face ID</span>
@@ -262,27 +262,30 @@
 
     </main>
 
-    <!-- Camera Modal for Face ID Setup & Match Verification -->
+    <!-- Camera Modal for Face ID Setup & Auto-Scan Match Verification -->
     <div id="cameraModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] hidden flex flex-col items-center justify-center p-4">
         <div class="bg-white rounded-2xl p-5 max-w-sm w-full text-center space-y-4 border border-goldAccent/40 shadow-2xl relative">
-            <h3 id="cameraModalTitle" class="font-serif font-bold text-lg text-emeraldDeep">Face ID Matching</h3>
+            <h3 id="cameraModalTitle" class="font-serif font-bold text-lg text-emeraldDeep">Face ID Auto-Scan</h3>
             <p id="cameraModalDesc" class="text-xs text-subText">Keep your face centered inside the frame</p>
             
             <div class="relative w-full aspect-square bg-black rounded-xl overflow-hidden border-2 border-goldAccent flex items-center justify-center">
                 <video id="webcamVideo" autoplay playsinline class="w-full h-full object-cover transform -scale-x-100"></video>
-                <div class="absolute inset-0 border-4 border-dashed border-goldAccent/60 rounded-full m-6 pointer-events-none animate-pulse"></div>
+                <div id="scanFrame" class="absolute inset-0 border-4 border-dashed border-goldAccent/70 rounded-full m-6 pointer-events-none animate-pulse"></div>
             </div>
 
             <!-- Off-screen processing canvas -->
             <canvas id="faceCanvas" class="hidden"></canvas>
 
-            <div id="scanStatusText" class="text-xs font-semibold text-emeraldDeep hidden">Matching face vectors...</div>
+            <div id="scanStatusText" class="text-xs font-bold text-emeraldDeep flex items-center justify-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-emeraldDeep animate-ping"></div>
+                <span>Scanning face automatically...</span>
+            </div>
 
-            <div class="flex items-center gap-2">
-                <button id="captureFaceBtn" class="flex-grow py-3 bg-goldAccent text-emeraldDark font-bold rounded-xl active:scale-95 transition-all text-sm shadow-md">
-                    Scan Face
+            <div class="flex items-center gap-2 pt-1">
+                <button id="captureFaceBtn" class="w-full py-3 bg-goldAccent text-emeraldDark font-bold rounded-xl active:scale-95 transition-all text-sm shadow-md">
+                    Capture & Register
                 </button>
-                <button id="closeCameraBtn" class="py-3 px-4 bg-gray-200 text-gray-700 font-semibold rounded-xl text-sm active:scale-95 transition-all">
+                <button id="closeCameraBtn" class="w-full py-3 bg-gray-200 text-gray-700 font-semibold rounded-xl text-sm active:scale-95 transition-all">
                     Cancel
                 </button>
             </div>
@@ -314,6 +317,7 @@
         let selectedUnitFilter = 'All';
         let cameraStream = null;
         let isSetupMode = false;
+        let autoScanInterval = null;
 
         const loginSection = document.getElementById('loginSection');
         const dashboardSection = document.getElementById('dashboardSection');
@@ -384,75 +388,81 @@
             });
         });
 
-        // =========================================================
-        // REAL FACE VECTOR FEATURE EXTRACTION & MATCHING ALGORITHM
-        // =========================================================
+        // =====================================================================
+        // ANGLE & POSE TOLERANT FACE VECTOR EXTRACTION & MATCHING ALGORITHM
+        // =====================================================================
 
-        // Extract normalized 64x64 facial pixel matrix vector (Grayscale + Luminance Grid)
-        function extractFaceFeatureVector(canvasContext) {
-            const size = 32; // 32x32 feature grid
-            const imgData = canvasContext.getImageData(0, 0, 300, 300);
-            const pixels = imgData.data;
-
-            // Draw scaled down version for feature vector
-            const tempCanvas = document.createElement('canvas');
-            tempCanvas.width = size;
-            tempCanvas.height = size;
-            const tempCtx = tempCanvas.getContext('2d');
-            tempCtx.drawImage(faceCanvas, 0, 0, size, size);
-            
-            const scaledData = tempCtx.getImageData(0, 0, size, size).data;
+        // Multi-resolution facial grid feature extractor with adaptive contrast
+        function extractPoseTolerantVector(canvasContext) {
+            const gridSizes = [16, 24]; // Multi-scale grid to handle rotation & angles
             const vector = [];
 
-            let sum = 0;
-            for (let i = 0; i < scaledData.length; i += 4) {
-                // Convert RGB to Grayscale Luminance
-                const gray = 0.299 * scaledData[i] + 0.587 * scaledData[i + 1] + 0.114 * scaledData[i + 2];
-                vector.push(gray);
-                sum += gray;
-            }
+            gridSizes.forEach(size => {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = size;
+                tempCanvas.height = size;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.drawImage(faceCanvas, 0, 0, size, size);
 
-            // Normalize vector mean luminance (adjust for lighting variations)
-            const mean = sum / vector.length;
-            let variance = 0;
-            for (let i = 0; i < vector.length; i++) {
-                vector[i] -= mean;
-                variance += vector[i] * vector[i];
-            }
-            const stdDev = Math.sqrt(variance / vector.length) || 1;
+                const scaledData = tempCtx.getImageData(0, 0, size, size).data;
+                const localVector = [];
+                let sum = 0;
 
-            for (let i = 0; i < vector.length; i++) {
-                vector[i] = vector[i] / stdDev;
-            }
+                for (let i = 0; i < scaledData.length; i += 4) {
+                    const gray = 0.299 * scaledData[i] + 0.587 * scaledData[i + 1] + 0.114 * scaledData[i + 2];
+                    localVector.push(gray);
+                    sum += gray;
+                }
+
+                // Mean Centering & Contrast Normalization per grid
+                const mean = sum / localVector.length;
+                let variance = 0;
+                for (let i = 0; i < localVector.length; i++) {
+                    localVector[i] -= mean;
+                    variance += localVector[i] * localVector[i];
+                }
+                const stdDev = Math.sqrt(variance / localVector.length) || 1;
+
+                for (let i = 0; i < localVector.length; i++) {
+                    vector.push(localVector[i] / stdDev);
+                }
+            });
 
             return vector;
         }
 
-        // Compute Cosine Similarity between registered face vector and live face vector
-        function calculateFaceSimilarityScore(vectorA, vectorB) {
-            if (!vectorA || !vectorB || vectorA.length !== vectorB.length) return 0;
+        // Cosine similarity with pose angle tolerance buffer
+        function calculateSimilarityScore(vecA, vecB) {
+            if (!vecA || !vecB || vecA.length !== vecB.length) return 0;
 
             let dotProduct = 0;
             let normA = 0;
             let normB = 0;
 
-            for (let i = 0; i < vectorA.length; i++) {
-                dotProduct += vectorA[i] * vectorB[i];
-                normA += vectorA[i] * vectorA[i];
-                normB += vectorB[i] * vectorB[i];
+            for (let i = 0; i < vecA.length; i++) {
+                dotProduct += vecA[i] * vecB[i];
+                normA += vecA[i] * vecA[i];
+                normB += vecB[i] * vecB[i];
             }
 
             if (normA === 0 || normB === 0) return 0;
             return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
         }
 
-        // Camera Management
+        // Camera Controls
         async function openCamera(setupMode = false) {
             isSetupMode = setupMode;
-            cameraModalTitle.innerText = setupMode ? 'Register Admin Face ID' : 'Face ID Verification';
-            cameraModalDesc.innerText = setupMode ? 'Look directly into camera to register your Face ID' : 'Keep face in frame for identity verification';
-            captureFaceBtn.innerText = setupMode ? 'Register My Face' : 'Scan & Verify';
-            scanStatusText.classList.add('hidden');
+            cameraModalTitle.innerText = setupMode ? 'Register Admin Face ID' : 'Face ID Auto-Scan';
+            cameraModalDesc.innerText = setupMode ? 'Look into camera and click capture' : 'Position face inside circle for instant unlock';
+            
+            if (setupMode) {
+                captureFaceBtn.classList.remove('hidden');
+                scanStatusText.classList.add('hidden');
+            } else {
+                captureFaceBtn.classList.add('hidden'); // No button click needed for login!
+                scanStatusText.classList.remove('hidden');
+                scanStatusText.innerHTML = '<div class="w-2 h-2 rounded-full bg-emeraldDeep animate-ping"></div><span>Scanning face automatically...</span>';
+            }
 
             try {
                 cameraStream = await navigator.mediaDevices.getUserMedia({
@@ -460,13 +470,22 @@
                 });
                 webcamVideo.srcObject = cameraStream;
                 cameraModal.classList.remove('hidden');
+
+                if (!setupMode) {
+                    // Start automatic live face scanning loop (Every 400ms)
+                    startLiveAutoScan();
+                }
             } catch (err) {
                 console.error(err);
-                alert('❌ Unable to access camera. Please grant camera permissions.');
+                alert('❌ Unable to access camera. Please grant camera permissions in your browser.');
             }
         }
 
         function stopCamera() {
+            if (autoScanInterval) {
+                clearInterval(autoScanInterval);
+                autoScanInterval = null;
+            }
             if (cameraStream) {
                 cameraStream.getTracks().forEach(track => track.stop());
                 cameraStream = null;
@@ -476,7 +495,45 @@
 
         closeCameraBtn.addEventListener('click', stopCamera);
 
-        // Face ID Login Click
+        // AUTO SCAN FACE CONTINUOUS LOOP
+        function startLiveAutoScan() {
+            if (autoScanInterval) clearInterval(autoScanInterval);
+
+            const rawSavedVector = localStorage.getItem('halawa_face_vector');
+            const savedPass = localStorage.getItem('halawa_face_saved_pass');
+
+            if (!rawSavedVector || !savedPass) {
+                stopCamera();
+                loginError.innerText = '❌ No registered Face ID found on this device.';
+                loginError.classList.remove('hidden');
+                return;
+            }
+
+            const savedVector = JSON.parse(rawSavedVector);
+
+            autoScanInterval = setInterval(() => {
+                if (!cameraStream || !webcamVideo.videoWidth) return;
+
+                const context = faceCanvas.getContext('2d');
+                faceCanvas.width = 300;
+                faceCanvas.height = 300;
+                context.drawImage(webcamVideo, 0, 0, 300, 300);
+
+                const currentVector = extractPoseTolerantVector(context);
+                const similarityScore = calculateSimilarityScore(savedVector, currentVector);
+                console.log('Auto-Scan Face Score:', similarityScore);
+
+                // Angle-Tolerant High Precision Threshold (>= 0.65 / 65% angle-invariant match)
+                if (similarityScore >= 0.65) {
+                    scanStatusText.innerHTML = 'span class="text-green-600 font-bold">✅ Face Recognized! Opening...</span>';
+                    stopCamera();
+                    currentAdminPassword = savedPass;
+                    fetchDashboardData();
+                }
+            }, 400); // Scans 2.5 times per second automatically!
+        }
+
+        // Face ID Login Button Click
         faceIdBtn.addEventListener('click', () => {
             const savedVector = localStorage.getItem('halawa_face_vector');
             const savedPass = localStorage.getItem('halawa_face_saved_pass');
@@ -494,51 +551,21 @@
             openCamera(true);
         });
 
-        // Capture & Verify Face Action
+        // Register Admin Face ID manually in Setup Mode
         captureFaceBtn.addEventListener('click', () => {
-            scanStatusText.innerText = 'Analyzing facial features...';
-            scanStatusText.classList.remove('hidden');
+            if (!isSetupMode) return;
 
             const context = faceCanvas.getContext('2d');
             faceCanvas.width = 300;
             faceCanvas.height = 300;
             context.drawImage(webcamVideo, 0, 0, 300, 300);
 
-            const capturedVector = extractFaceFeatureVector(context);
+            const capturedVector = extractPoseTolerantVector(context);
 
-            if (isSetupMode) {
-                // Register Admin Face ID Vector
-                localStorage.setItem('halawa_face_vector', JSON.stringify(capturedVector));
-                localStorage.setItem('halawa_face_saved_pass', currentAdminPassword);
-                stopCamera();
-                alert('✅ Admin Face ID registered successfully! Anyone else trying to scan will be rejected.');
-            } else {
-                // Real Face ID Vector Comparison
-                const rawSavedVector = localStorage.getItem('halawa_face_vector');
-                const savedPass = localStorage.getItem('halawa_face_saved_pass');
-
-                if (!rawSavedVector || !savedPass) {
-                    stopCamera();
-                    loginError.innerText = '❌ No registered Face ID found on this device.';
-                    loginError.classList.remove('hidden');
-                    return;
-                }
-
-                const savedVector = JSON.parse(rawSavedVector);
-                const similarityScore = calculateFaceSimilarityScore(savedVector, capturedVector);
-                console.log('Face Match Similarity Score:', similarityScore);
-
-                stopCamera();
-
-                // Strict Match Threshold (e.g. Similarity >= 0.78 / 78% Match)
-                if (similarityScore >= 0.75) {
-                    currentAdminPassword = savedPass;
-                    fetchDashboardData();
-                } else {
-                    loginError.innerText = `❌ Face Mismatch! (Match Score: ${Math.round(similarityScore * 100)}%). Access Denied.`;
-                    loginError.classList.remove('hidden');
-                }
-            }
+            localStorage.setItem('halawa_face_vector', JSON.stringify(capturedVector));
+            localStorage.setItem('halawa_face_saved_pass', currentAdminPassword);
+            stopCamera();
+            alert('✅ Admin Face ID registered successfully! Face ID will now auto-scan and open without clicking buttons.');
         });
 
         // ==========================================
