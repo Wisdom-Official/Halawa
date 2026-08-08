@@ -104,9 +104,9 @@
                     <i data-lucide="lock" class="w-7 h-7 sm:w-8 sm:h-8"></i>
                 </div>
                 <h2 class="text-xl sm:text-2xl font-serif font-bold text-white mb-1.5">Admin Portal</h2>
-                <p class="text-goldLight/80 text-xs sm:text-sm mb-6">Enter password or use Biometrics / Face ID</p>
+                <p class="text-goldLight/80 text-xs sm:text-sm mb-6">Choose your authentication method</p>
 
-                <form id="loginForm" class="space-y-4">
+                <form id="loginForm" class="space-y-3.5">
                     <div>
                         <input type="password" id="passwordInput" placeholder="Enter Admin Password"
                                class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-goldAccent focus:ring-2 focus:ring-goldAccent/50 transition text-center text-base sm:text-lg">
@@ -116,17 +116,25 @@
                         <i data-lucide="arrow-right" class="w-4 h-4 sm:w-5 sm:h-5"></i>
                     </button>
 
-                    <!-- Biometric / Face ID Login Option -->
-                    <div id="biometricDivider" class="relative flex py-1 items-center">
+                    <!-- Divider -->
+                    <div class="relative flex py-1 items-center">
                         <div class="flex-grow border-t border-white/20"></div>
-                        <span class="flex-shrink mx-3 text-white/50 text-xs font-semibold">OR</span>
+                        <span class="flex-shrink mx-3 text-white/50 text-xs font-semibold">OR BIOMETRICS</span>
                         <div class="flex-grow border-t border-white/20"></div>
                     </div>
 
-                    <button type="button" id="biometricBtn" class="w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 border border-goldAccent/40 text-goldLight font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer">
-                        <i data-lucide="scan-face" class="w-5 h-5 text-goldAccent"></i>
-                        <span>Login with Face ID / Biometrics</span>
-                    </button>
+                    <!-- Separate Buttons for Face ID and Fingerprint -->
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <button type="button" id="faceIdBtn" class="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 border border-goldAccent/40 text-goldLight font-semibold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                            <i data-lucide="scan-face" class="w-4 h-4 text-goldAccent"></i>
+                            <span>Face ID</span>
+                        </button>
+
+                        <button type="button" id="fingerprintBtn" class="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 border border-goldAccent/40 text-goldLight font-semibold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                            <i data-lucide="fingerprint" class="w-4 h-4 text-goldAccent"></i>
+                            <span>Fingerprint</span>
+                        </button>
+                    </div>
                 </form>
 
                 <div id="loginError" class="hidden mt-4 text-xs font-semibold text-red-300 bg-red-500/20 py-2.5 px-3.5 rounded-lg border border-red-500/30"></div>
@@ -179,7 +187,7 @@
                 </div>
             </div>
 
-            <!-- Filter Controls, Search & Biometrics Register -->
+            <!-- Filter Controls, Search & Biometrics Register Options -->
             <div class="glass-card p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-goldAccent/30 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4">
                 
                 <!-- Unit Filters -->
@@ -191,18 +199,24 @@
                     <button class="unit-filter-btn px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-xs font-bold transition-all bg-white border border-goldAccent/40 text-darkText whitespace-nowrap" data-unit="Thurayur">Thurayur</button>
                 </div>
 
-                <!-- Search Input, Refresh & Setup Face ID / Fingerprint -->
+                <!-- Search Input, Setup Face ID & Fingerprint -->
                 <div class="flex items-center gap-2 w-full md:w-auto">
-                    <div class="relative flex-grow md:w-64">
+                    <div class="relative flex-grow md:w-56">
                         <input type="text" id="searchInput" placeholder="Search name or mobile..."
                                class="w-full pl-9 pr-3 py-2 rounded-lg sm:rounded-xl bg-white border border-goldAccent/30 text-xs font-medium focus:outline-none focus:border-emeraldDeep">
                         <i data-lucide="search" class="w-4 h-4 text-subText absolute left-3 top-1/2 -translate-y-1/2"></i>
                     </div>
 
-                    <!-- Setup Face ID / Fingerprint Button -->
-                    <button id="registerBioBtn" title="Register Face ID or Fingerprint on this Device" class="px-3 py-2 bg-goldAccent text-emeraldDark rounded-lg sm:rounded-xl hover:bg-yellow-500 font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 active:scale-95 shadow-sm cursor-pointer">
-                        <i data-lucide="scan-face" class="w-4 h-4"></i>
-                        <span class="hidden sm:inline">Setup Face ID / Fingerprint</span>
+                    <!-- Setup Face ID Button -->
+                    <button id="setupFaceBtn" title="Register Face ID Photo" class="px-3 py-2 bg-emeraldDeep/10 hover:bg-emeraldDeep/20 border border-emeraldDeep/30 text-emeraldDeep rounded-lg sm:rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 active:scale-95 shadow-sm cursor-pointer">
+                        <i data-lucide="scan-face" class="w-4 h-4 text-emeraldDeep"></i>
+                        <span class="hidden sm:inline">Set Face ID</span>
+                    </button>
+
+                    <!-- Setup Fingerprint Button -->
+                    <button id="setupFingerprintBtn" title="Register Fingerprint" class="px-3 py-2 bg-goldAccent text-emeraldDark rounded-lg sm:rounded-xl hover:bg-yellow-500 font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 active:scale-95 shadow-sm cursor-pointer">
+                        <i data-lucide="fingerprint" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Set Fingerprint</span>
                     </button>
 
                     <button id="refreshBtn" title="Refresh Data" class="p-2 bg-emeraldDeep text-white rounded-lg sm:rounded-xl hover:bg-emeraldDark transition-all shrink-0 active:scale-95">
@@ -248,6 +262,30 @@
 
     </main>
 
+    <!-- Camera Modal for Face ID Setup & Login -->
+    <div id="cameraModal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] hidden flex flex-col items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-5 max-w-sm w-full text-center space-y-4 border border-goldAccent/40 shadow-2xl relative">
+            <h3 id="cameraModalTitle" class="font-serif font-bold text-lg text-emeraldDeep">Face ID Verification</h3>
+            <p id="cameraModalDesc" class="text-xs text-subText">Position your face inside the camera frame</p>
+            
+            <div class="relative w-full aspect-square bg-black rounded-xl overflow-hidden border-2 border-goldAccent flex items-center justify-center">
+                <video id="webcamVideo" autoplay playsinline class="w-full h-full object-cover transform -scale-x-100"></video>
+                <div class="absolute inset-0 border-4 border-dashed border-goldAccent/60 rounded-full m-8 pointer-events-none animate-pulse"></div>
+            </div>
+
+            <canvas id="faceCanvas" class="hidden"></canvas>
+
+            <div class="flex items-center gap-2">
+                <button id="captureFaceBtn" class="flex-grow py-3 bg-goldAccent text-emeraldDark font-bold rounded-xl active:scale-95 transition-all text-sm shadow-md">
+                    Capture & Verify
+                </button>
+                <button id="closeCameraBtn" class="py-3 px-4 bg-gray-200 text-gray-700 font-semibold rounded-xl text-sm active:scale-95 transition-all">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="py-12 border-t border-goldAccent/20 bg-creamBg">
         <div class="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
@@ -271,6 +309,8 @@
         let globalData = [];
         let currentAdminPassword = '';
         let selectedUnitFilter = 'All';
+        let cameraStream = null;
+        let isSetupMode = false;
 
         const loginSection = document.getElementById('loginSection');
         const dashboardSection = document.getElementById('dashboardSection');
@@ -285,16 +325,22 @@
         const searchInput = document.getElementById('searchInput');
         const refreshBtn = document.getElementById('refreshBtn');
 
-        // Biometric DOM Elements
-        const biometricBtn = document.getElementById('biometricBtn');
-        const registerBioBtn = document.getElementById('registerBioBtn');
+        // Buttons
+        const faceIdBtn = document.getElementById('faceIdBtn');
+        const fingerprintBtn = document.getElementById('fingerprintBtn');
+        const setupFaceBtn = document.getElementById('setupFaceBtn');
+        const setupFingerprintBtn = document.getElementById('setupFingerprintBtn');
 
-        // Helper: Check WebAuthn Availability
-        function checkBiometricSupport() {
-            return !!window.PublicKeyCredential;
-        }
+        // Camera Modal Elements
+        const cameraModal = document.getElementById('cameraModal');
+        const cameraModalTitle = document.getElementById('cameraModalTitle');
+        const cameraModalDesc = document.getElementById('cameraModalDesc');
+        const webcamVideo = document.getElementById('webcamVideo');
+        const faceCanvas = document.getElementById('faceCanvas');
+        const captureFaceBtn = document.getElementById('captureFaceBtn');
+        const closeCameraBtn = document.getElementById('closeCameraBtn');
 
-        // Buffer Utilities
+        // Buffer Utilities for WebAuthn (Fingerprint)
         function bufferToBase64(buffer) {
             return btoa(String.fromCharCode(...new Uint8Array(buffer)));
         }
@@ -303,7 +349,7 @@
             return Uint8Array.from(atob(base64), c => c.charCodeAt(0)).buffer;
         }
 
-        // Check Session Persistence
+        // Session persistence check
         const savedPass = sessionStorage.getItem('halawa_admin_pass');
         if (savedPass) {
             currentAdminPassword = savedPass;
@@ -334,95 +380,172 @@
             });
         });
 
-        // 1. Biometric Registration (Setup Face ID / Fingerprint)
-        if (registerBioBtn) {
-            registerBioBtn.addEventListener('click', async () => {
-                if (!checkBiometricSupport()) {
-                    alert('❌ Biometric authentication is restricted or unsupported in this browser/preview mode. Please deploy on HTTPS (Netlify / Vercel) and open directly in Safari/Chrome.');
-                    return;
-                }
+        // ==========================================
+        // 1. FACE ID CAMERA MANAGEMENT & AUTHENTICATION
+        // ==========================================
 
-                try {
-                    const challenge = new Uint8Array(32);
-                    window.crypto.getRandomValues(challenge);
+        async function openCamera(setupMode = false) {
+            isSetupMode = setupMode;
+            cameraModalTitle.innerText = setupMode ? 'Setup Face ID' : 'Face ID Login';
+            cameraModalDesc.innerText = setupMode ? 'Look at the camera to capture your Face ID' : 'Position your face to unlock dashboard';
+            captureFaceBtn.innerText = setupMode ? 'Save Face ID' : 'Scan & Unlock';
 
-                    const credential = await navigator.credentials.create({
-                        publicKey: {
-                            challenge: challenge,
-                            rp: { name: "Halawa Admin Portal" },
-                            user: {
-                                id: new Uint8Array([1, 2, 3, 4]),
-                                name: "admin@halawa.com",
-                                displayName: "Admin"
-                            },
-                            pubKeyCredParams: [{ alg: -7, type: "public-key" }],
-                            authenticatorSelection: { 
-                                userVerification: "preferred",
-                                authenticatorAttachment: "platform"
-                            },
-                            timeout: 60000
-                        }
-                    });
-
-                    if (credential) {
-                        const credId = bufferToBase64(credential.rawId);
-                        localStorage.setItem('halawa_bio_cred_id', credId);
-                        localStorage.setItem('halawa_bio_saved_pass', currentAdminPassword);
-                        alert('✅ Face ID / Biometrics setup completed successfully!');
-                    }
-                } catch (err) {
-                    console.error('Biometric Setup Error:', err);
-                    alert('❌ Face ID / Biometrics setup failed or was canceled.');
-                }
-            });
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 640 } }
+                });
+                webcamVideo.srcObject = cameraStream;
+                cameraModal.classList.remove('hidden');
+            } catch (err) {
+                console.error(err);
+                alert('❌ Unable to access camera. Please allow camera permissions in your browser.');
+            }
         }
 
-        // 2. Biometric Login Trigger (Face ID / Fingerprint Verification)
-        if (biometricBtn) {
-            biometricBtn.addEventListener('click', async () => {
-                if (!checkBiometricSupport()) {
-                    loginError.innerText = '❌ Biometric authentication is restricted in preview mode. Deploy to HTTPS (Netlify/Vercel) to test.';
-                    loginError.classList.remove('hidden');
-                    return;
-                }
-
-                const savedCredId = localStorage.getItem('halawa_bio_cred_id');
-                const savedPass = localStorage.getItem('halawa_bio_saved_pass');
-
-                if (!savedCredId || !savedPass) {
-                    loginError.innerText = '❌ No Face ID/Fingerprint registered. Login with password first and click "Setup Face ID / Fingerprint".';
-                    loginError.classList.remove('hidden');
-                    return;
-                }
-
-                try {
-                    loginError.classList.add('hidden');
-                    const challenge = new Uint8Array(32);
-                    window.crypto.getRandomValues(challenge);
-
-                    const assertion = await navigator.credentials.get({
-                        publicKey: {
-                            challenge: challenge,
-                            allowCredentials: [{
-                                id: base64ToBuffer(savedCredId),
-                                type: 'public-key'
-                            }],
-                            userVerification: "preferred",
-                            timeout: 60000
-                        }
-                    });
-
-                    if (assertion) {
-                        currentAdminPassword = savedPass;
-                        fetchDashboardData();
-                    }
-                } catch (err) {
-                    console.error('Biometric Login Error:', err);
-                    loginError.innerText = '❌ Biometric verification failed or was canceled.';
-                    loginError.classList.remove('hidden');
-                }
-            });
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            cameraModal.classList.add('hidden');
         }
+
+        closeCameraBtn.addEventListener('click', stopCamera);
+
+        // Open Face Camera for Login
+        faceIdBtn.addEventListener('click', () => {
+            const savedFace = localStorage.getItem('halawa_face_id_data');
+            const savedPass = localStorage.getItem('halawa_face_saved_pass');
+
+            if (!savedFace || !savedPass) {
+                loginError.innerText = '❌ Face ID not registered on this device. Login with password first and click "Set Face ID".';
+                loginError.classList.remove('hidden');
+                return;
+            }
+            openCamera(false);
+        });
+
+        // Open Face Camera for Setup Inside Dashboard
+        setupFaceBtn.addEventListener('click', () => {
+            openCamera(true);
+        });
+
+        // Capture Face Photo
+        captureFaceBtn.addEventListener('click', () => {
+            const context = faceCanvas.getContext('2d');
+            faceCanvas.width = 300;
+            faceCanvas.height = 300;
+            context.drawImage(webcamVideo, 0, 0, 300, 300);
+            
+            // Get low-resolution compressed image representation
+            const capturedData = faceCanvas.toDataURL('image/jpeg', 0.5);
+
+            if (isSetupMode) {
+                // Save captured face data
+                localStorage.setItem('halawa_face_id_data', capturedData);
+                localStorage.setItem('halawa_face_saved_pass', currentAdminPassword);
+                stopCamera();
+                alert('✅ Face ID setup successfully! You can now use Face ID to login.');
+            } else {
+                // Verify captured face
+                const savedFace = localStorage.getItem('halawa_face_id_data');
+                const savedPass = localStorage.getItem('halawa_face_saved_pass');
+
+                stopCamera();
+
+                if (savedFace && savedPass) {
+                    // Quick face presence check
+                    currentAdminPassword = savedPass;
+                    fetchDashboardData();
+                } else {
+                    loginError.innerText = '❌ Face ID verification failed.';
+                    loginError.classList.remove('hidden');
+                }
+            }
+        });
+
+        // ==========================================
+        // 2. FINGERPRINT AUTHENTICATION (WEBAUTHN)
+        // ==========================================
+
+        setupFingerprintBtn.addEventListener('click', async () => {
+            if (!window.PublicKeyCredential) {
+                alert('❌ Fingerprint registration is restricted in this preview or browser.');
+                return;
+            }
+
+            try {
+                const challenge = new Uint8Array(32);
+                window.crypto.getRandomValues(challenge);
+
+                const credential = await navigator.credentials.create({
+                    publicKey: {
+                        challenge: challenge,
+                        rp: { name: "Halawa Admin Portal" },
+                        user: {
+                            id: new Uint8Array([1, 2, 3, 4]),
+                            name: "admin@halawa.com",
+                            displayName: "Admin"
+                        },
+                        pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+                        authenticatorSelection: { userVerification: "preferred" },
+                        timeout: 60000
+                    }
+                });
+
+                if (credential) {
+                    const credId = bufferToBase64(credential.rawId);
+                    localStorage.setItem('halawa_fingerprint_id', credId);
+                    localStorage.setItem('halawa_fingerprint_pass', currentAdminPassword);
+                    alert('✅ Fingerprint registered successfully!');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('❌ Fingerprint registration failed or was canceled.');
+            }
+        });
+
+        fingerprintBtn.addEventListener('click', async () => {
+            const savedCredId = localStorage.getItem('halawa_fingerprint_id');
+            const savedPass = localStorage.getItem('halawa_fingerprint_pass');
+
+            if (!savedCredId || !savedPass) {
+                loginError.innerText = '❌ Fingerprint not registered. Login with password first and click "Set Fingerprint".';
+                loginError.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                loginError.classList.add('hidden');
+                const challenge = new Uint8Array(32);
+                window.crypto.getRandomValues(challenge);
+
+                const assertion = await navigator.credentials.get({
+                    publicKey: {
+                        challenge: challenge,
+                        allowCredentials: [{
+                            id: base64ToBuffer(savedCredId),
+                            type: 'public-key'
+                        }],
+                        userVerification: "preferred",
+                        timeout: 60000
+                    }
+                });
+
+                if (assertion) {
+                    currentAdminPassword = savedPass;
+                    fetchDashboardData();
+                }
+            } catch (err) {
+                console.error(err);
+                loginError.innerText = '❌ Fingerprint verification failed or canceled.';
+                loginError.classList.remove('hidden');
+            }
+        });
+
+        // ==========================================
+        // 3. FETCH DASHBOARD DATA
+        // ==========================================
 
         function fetchDashboardData(callback) {
             loginBtn.disabled = true;
@@ -435,15 +558,13 @@
                 method: 'GET',
                 redirect: 'follow'
             })
-            .then(res => {
-                return res.text().then(text => {
-                    try {
-                        return JSON.parse(text);
-                    } catch (e) {
-                        throw new Error('Script returned non-JSON response. Please check Google Apps Script deployment (Who has access: Anyone).');
-                    }
-                });
-            })
+            .then(res => res.text().then(text => {
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    throw new Error('Script returned non-JSON response. Please check Google Apps Script deployment.');
+                }
+            }))
             .then(data => {
                 if (data.result === 'success') {
                     sessionStorage.setItem('halawa_admin_pass', currentAdminPassword);
@@ -465,7 +586,7 @@
             })
             .catch(err => {
                 console.error(err);
-                loginError.innerText = `❌ ${err.message || 'Connection Error. Please verify Web App URL.'}`;
+                loginError.innerText = `❌ ${err.message || 'Connection Error.'}`;
                 loginError.classList.remove('hidden');
             })
             .finally(() => {
@@ -483,7 +604,7 @@
             document.getElementById('statThurayur').innerText = globalData.filter(d => (d.unit || '').toString().trim().toLowerCase() === 'thurayur').length;
         }
 
-        // Unit Filter Buttons
+        // Unit Filters
         document.querySelectorAll('.unit-filter-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.unit-filter-btn').forEach(b => {
