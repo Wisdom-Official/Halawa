@@ -80,15 +80,17 @@
                 <span class="font-serif font-bold text-base sm:text-xl tracking-wider text-emeraldDeep truncate"></span>
             </a>
 
-            <button id="logoutBtn" class="hidden inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border border-red-500/30 text-red-600 hover:bg-red-600 hover:text-white transition-all text-xs sm:text-sm font-semibold">
-                <i data-lucide="log-out" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
-                <span>Logout</span>
-            </button>
-            
-            <a href="index.html" class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border border-emeraldDeep/30 text-emeraldDeep text-xs sm:text-sm font-semibold hover:bg-emeraldDeep hover:text-white transition-all">
-                <i data-lucide="arrow-left" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
-                <span>Home</span>
-            </a>
+            <div class="flex items-center gap-2">
+                <button id="logoutBtn" class="hidden inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border border-red-500/30 text-red-600 hover:bg-red-600 hover:text-white transition-all text-xs sm:text-sm font-semibold">
+                    <i data-lucide="log-out" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+                    <span>Logout</span>
+                </button>
+                
+                <a href="index.html" class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border border-emeraldDeep/30 text-emeraldDeep text-xs sm:text-sm font-semibold hover:bg-emeraldDeep hover:text-white transition-all">
+                    <i data-lucide="arrow-left" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+                    <span>Home</span>
+                </a>
+            </div>
         </div>
     </header>
 
@@ -102,16 +104,28 @@
                     <i data-lucide="lock" class="w-7 h-7 sm:w-8 sm:h-8"></i>
                 </div>
                 <h2 class="text-xl sm:text-2xl font-serif font-bold text-white mb-1.5">Admin Portal</h2>
-                <p class="text-goldLight/80 text-xs sm:text-sm mb-6">Enter password to view registered members</p>
+                <p class="text-goldLight/80 text-xs sm:text-sm mb-6">Enter password or use fingerprint to view members</p>
 
                 <form id="loginForm" class="space-y-4">
                     <div>
-                        <input type="password" id="passwordInput" required placeholder="Enter Admin Password"
+                        <input type="password" id="passwordInput" placeholder="Enter Admin Password"
                                class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:border-goldAccent focus:ring-2 focus:ring-goldAccent/50 transition text-center text-base sm:text-lg">
                     </div>
                     <button type="submit" id="loginBtn" class="w-full py-3.5 rounded-xl bg-goldAccent active:bg-yellow-500 hover:bg-yellow-500 text-emeraldDark font-bold text-sm sm:text-base shadow-lg transition-all flex items-center justify-center gap-2">
                         <span>Access Dashboard</span>
                         <i data-lucide="arrow-right" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                    </button>
+
+                    <!-- Fingerprint Login Option -->
+                    <div id="biometricDivider" class="relative flex py-1 items-center">
+                        <div class="flex-grow border-t border-white/20"></div>
+                        <span class="flex-shrink mx-3 text-white/50 text-xs font-semibold">OR</span>
+                        <div class="flex-grow border-t border-white/20"></div>
+                    </div>
+
+                    <button type="button" id="biometricBtn" class="w-full py-3 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 border border-goldAccent/40 text-goldLight font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer">
+                        <i data-lucide="fingerprint" class="w-5 h-5 text-goldAccent"></i>
+                        <span>Login with Fingerprint</span>
                     </button>
                 </form>
 
@@ -165,7 +179,7 @@
                 </div>
             </div>
 
-            <!-- Filter Controls & Search -->
+            <!-- Filter Controls, Search & Biometrics Register -->
             <div class="glass-card p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-goldAccent/30 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4">
                 
                 <!-- Unit Filters -->
@@ -177,7 +191,7 @@
                     <button class="unit-filter-btn px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl text-xs font-bold transition-all bg-white border border-goldAccent/40 text-darkText whitespace-nowrap" data-unit="Thurayur">Thurayur</button>
                 </div>
 
-                <!-- Search Input & Refresh -->
+                <!-- Search Input, Refresh & Setup Fingerprint -->
                 <div class="flex items-center gap-2 w-full md:w-auto">
                     <div class="relative flex-grow md:w-64">
                         <input type="text" id="searchInput" placeholder="Search name or mobile..."
@@ -185,7 +199,13 @@
                         <i data-lucide="search" class="w-4 h-4 text-subText absolute left-3 top-1/2 -translate-y-1/2"></i>
                     </div>
 
-                    <button id="refreshBtn" title="Refresh Data" class="p-2 bg-emeraldDeep text-white rounded-lg sm:rounded-xl hover:bg-emeraldDark transition-all shrink-0">
+                    <!-- Register Fingerprint Button -->
+                    <button id="registerBioBtn" title="Register Fingerprint on this Device" class="px-3 py-2 bg-goldAccent text-emeraldDark rounded-lg sm:rounded-xl hover:bg-yellow-500 font-bold text-xs flex items-center gap-1.5 transition-all shrink-0 active:scale-95 shadow-sm cursor-pointer">
+                        <i data-lucide="fingerprint" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Setup Fingerprint</span>
+                    </button>
+
+                    <button id="refreshBtn" title="Refresh Data" class="p-2 bg-emeraldDeep text-white rounded-lg sm:rounded-xl hover:bg-emeraldDark transition-all shrink-0 active:scale-95">
                         <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                     </button>
                 </div>
@@ -265,6 +285,27 @@
         const searchInput = document.getElementById('searchInput');
         const refreshBtn = document.getElementById('refreshBtn');
 
+        // Biometric DOM Elements
+        const biometricBtn = document.getElementById('biometricBtn');
+        const registerBioBtn = document.getElementById('registerBioBtn');
+
+        // Helper: Check WebAuthn Availability
+        function checkBiometricSupport() {
+            if (!window.PublicKeyCredential) {
+                return false;
+            }
+            return true;
+        }
+
+        // Buffer Utilities
+        function bufferToBase64(buffer) {
+            return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+        }
+
+        function base64ToBuffer(base64) {
+            return Uint8Array.from(atob(base64), c => c.charCodeAt(0)).buffer;
+        }
+
         // Check Session Persistence
         const savedPass = sessionStorage.getItem('halawa_admin_pass');
         if (savedPass) {
@@ -274,7 +315,13 @@
 
         loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            currentAdminPassword = passwordInput.value.trim();
+            const enteredPass = passwordInput.value.trim();
+            if (!enteredPass) {
+                loginError.innerText = '❌ Please enter password!';
+                loginError.classList.remove('hidden');
+                return;
+            }
+            currentAdminPassword = enteredPass;
             fetchDashboardData();
         });
 
@@ -289,6 +336,93 @@
                 refreshBtn.classList.remove('animate-spin');
             });
         });
+
+        // 1. Biometric Registration (Inside Dashboard)
+        if (registerBioBtn) {
+            registerBioBtn.addEventListener('click', async () => {
+                if (!checkBiometricSupport()) {
+                    alert('❌ Biometric login is not supported in this browser or iframe. Please host your site on HTTPS (like Netlify or Vercel) and open directly in a browser.');
+                    return;
+                }
+
+                try {
+                    const challenge = new Uint8Array(32);
+                    window.crypto.getRandomValues(challenge);
+
+                    const credential = await navigator.credentials.create({
+                        publicKey: {
+                            challenge: challenge,
+                            rp: { name: "Halawa Admin Portal" },
+                            user: {
+                                id: new Uint8Array([1, 2, 3, 4]),
+                                name: "admin@halawa.com",
+                                displayName: "Admin"
+                            },
+                            pubKeyCredParams: [{ alg: -7, type: "public-key" }],
+                            authenticatorSelection: { userVerification: "preferred" },
+                            timeout: 60000
+                        }
+                    });
+
+                    if (credential) {
+                        const credId = bufferToBase64(credential.rawId);
+                        localStorage.setItem('halawa_bio_cred_id', credId);
+                        localStorage.setItem('halawa_bio_saved_pass', currentAdminPassword);
+                        alert('✅ Fingerprint setup completed successfully! You can now login with fingerprint next time.');
+                    }
+                } catch (err) {
+                    console.error('Biometric Setup Error:', err);
+                    alert('❌ Fingerprint setup failed/cancelled. (Note: WebAuthn requires HTTPS connection or local domain).');
+                }
+            });
+        }
+
+        // 2. Biometric Login Trigger
+        if (biometricBtn) {
+            biometricBtn.addEventListener('click', async () => {
+                if (!checkBiometricSupport()) {
+                    loginError.innerText = '❌ Fingerprint sensor is restricted in preview mode. Deploy to HTTPS (Netlify/Vercel) to use this.';
+                    loginError.classList.remove('hidden');
+                    return;
+                }
+
+                const savedCredId = localStorage.getItem('halawa_bio_cred_id');
+                const savedPass = localStorage.getItem('halawa_bio_saved_pass');
+
+                if (!savedCredId || !savedPass) {
+                    loginError.innerText = '❌ No fingerprint saved on this device. Login with password first and click "Setup Fingerprint".';
+                    loginError.classList.remove('hidden');
+                    return;
+                }
+
+                try {
+                    loginError.classList.add('hidden');
+                    const challenge = new Uint8Array(32);
+                    window.crypto.getRandomValues(challenge);
+
+                    const assertion = await navigator.credentials.get({
+                        publicKey: {
+                            challenge: challenge,
+                            allowCredentials: [{
+                                id: base64ToBuffer(savedCredId),
+                                type: 'public-key'
+                            }],
+                            userVerification: "preferred",
+                            timeout: 60000
+                        }
+                    });
+
+                    if (assertion) {
+                        currentAdminPassword = savedPass;
+                        fetchDashboardData();
+                    }
+                } catch (err) {
+                    console.error('Biometric Login Error:', err);
+                    loginError.innerText = '❌ Fingerprint verification failed or was canceled.';
+                    loginError.classList.remove('hidden');
+                }
+            });
+        }
 
         function fetchDashboardData(callback) {
             loginBtn.disabled = true;
@@ -398,7 +532,7 @@
                     const name = escapeHtml((row.name || '').toString());
                     const rawMobile = (row.mobile || '').toString();
                     const mobile = escapeHtml(rawMobile);
-                    const cleanPhone = rawMobile.replace(/[^\d+]/g, ''); // Extract clean phone digits for tel: link
+                    const cleanPhone = rawMobile.replace(/[^\d+]/g, '');
                     const unit = escapeHtml((row.unit || '').toString());
                     
                     // Desktop Table Row
@@ -456,3 +590,4 @@
     </script>
 </body>
 </html>
+
